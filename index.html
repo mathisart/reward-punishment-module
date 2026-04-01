@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統v2.0.0</title>
+  <title>作業抽查管理系統v2.1.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
@@ -15,7 +15,6 @@
     
     .top-controls { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f8ec; padding: 20px; border-radius: 20px; border: 2px dashed var(--sage-green); }
     
-    /* 全域設定區 */
     .global-settings { background: #fff; border: 2px solid var(--earth); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(221,161,94,0.1); position: relative; }
     .sync-toggle { position: absolute; top: 25px; right: 25px; background: var(--cream); padding: 8px 15px; border-radius: 12px; border: 2px solid var(--sage-green); font-weight: bold; cursor: pointer; color: var(--wood-green); display: flex; align-items: center; gap: 8px; transition: 0.2s; }
     .sync-toggle:hover { background: #e9edc9; }
@@ -26,14 +25,18 @@
 
     .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 25px; margin-bottom: 30px; position: relative; transition: 0.3s; }
     .class-card:hover { border-color: var(--sage-green); }
-    
-    /* 班級個別設定區 */
     .card-settings { background: #fff; border: 1px dashed #ccc; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
 
-    .history-panel { width: 420px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
-    .history-panel h3 { margin-top: 0; font-size: 1.5rem; color: var(--brown); border-bottom: 3px solid var(--earth); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;}
+    /* 🌟 優化歷史面板：加上最大高度與卷軸 */
+    .history-panel { width: 420px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); max-height: 85vh; display: flex; flex-direction: column;}
+    .history-panel h3 { margin-top: 0; font-size: 1.5rem; color: var(--brown); border-bottom: 3px solid var(--earth); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
+    #historyList { overflow-y: auto; flex: 1; padding-right: 5px; }
+    /* 自訂捲軸樣式 */
+    #historyList::-webkit-scrollbar { width: 6px; }
+    #historyList::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+    
     .history-item { padding: 12px; margin-bottom: 10px; background: #fffdf5; border-radius: 10px; border-left: 6px solid var(--sage-green); border: 1px solid #eee; font-size: 1rem; }
-    .btn-batch-download { background: var(--sage-green); color: white; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; width: 100%; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 5px 10px rgba(96,108,56,0.2); }
+    .btn-batch-download { background: var(--sage-green); color: white; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; width: 100%; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 5px 10px rgba(96,108,56,0.2); flex-shrink: 0;}
 
     table { width: 100%; border-spacing: 0 8px; margin-top: 10px; }
     td { background: white; padding: 10px; border-radius: 10px; border: 1px solid #f0f0f0; }
@@ -58,7 +61,7 @@
 </head>
 <body>
 
-  <div style="background:var(--wood-green); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.0.0 - 雙軌設定與智慧事由版</div>
+  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.1.0 - 橫印與防快取優化版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
@@ -141,7 +144,8 @@
     let cardCount = 0;
 
     window.onload = function() {
-      fetch(`${GAS_URL}?action=initData`)
+      // 🌟 強制加上時間戳記，避免瀏覽器讀取快取的舊歷史紀錄
+      fetch(`${GAS_URL}?action=initData&t=${new Date().getTime()}`)
         .then(res => res.json())
         .then(res => {
           studentDataMap = res.data.students;
@@ -156,15 +160,12 @@
         });
     };
 
-    // 🌟 切換全域/個別設定的邏輯
     function toggleSync() {
       const isSync = document.getElementById('syncGlobal').checked;
       const allCardSettings = document.querySelectorAll('.card-settings');
       
       allCardSettings.forEach(settingDiv => {
         settingDiv.style.display = isSync ? 'none' : 'block';
-        
-        // 如果是「取消同步」(也就是要個別設定時)，自動把全域的值複製進來當預設值，省去老師重打
         if (!isSync) {
           settingDiv.querySelector('.inp-date').value = document.getElementById('globalDate').value;
           settingDiv.querySelector('.inp-year').value = document.getElementById('globalYear').value;
@@ -188,7 +189,6 @@
         return `<option value="${c}" ${isSelected}>${c} 班</option>`;
       }).join('');
       
-      // 根據目前的同步狀態決定是否顯示個別設定區塊
       const isSync = document.getElementById('syncGlobal').checked;
       const displayStyle = isSync ? 'none' : 'block';
 
@@ -227,11 +227,7 @@
         <button class="btn-action btn-add" style="margin-top:10px; width:100%; padding:8px;" onclick="addStudentRow('${cardId}')">＋ 單筆新增學生</button>
       `;
       container.appendChild(card);
-      
-      // 如果預設是個別設定，需要馬上初始化它的值
-      if (!isSync) {
-        toggleSync(); // 觸發一次同步複製
-      }
+      if (!isSync) toggleSync(); 
       return cardId;
     }
 
@@ -288,14 +284,12 @@
       closeModal();
     }
 
-    // 🌟 全域與個別資料動態提取
     function submitAll() {
       const isSync = document.getElementById('syncGlobal').checked;
       const cards = document.querySelectorAll('.class-card');
       const allData = [];
       
       cards.forEach(card => {
-        // 決定要用哪一組設定 (全域 or 個別)
         let cYear, cDate, cType, cTitle, cSuffix;
 
         if (isSync) {
@@ -312,7 +306,6 @@
           cSuffix = card.querySelector('.inp-suffix').value;
         }
 
-        // 🌟 組合標題與事由 (例：113學年度 第一次作業抽查 (國文習作未依規定期限完成並繳交))
         const fullReason = `${cTitle}${cSuffix}`;
         const finalBackendString = `${cYear}學年度 ${cType} (${fullReason})`;
 
@@ -347,25 +340,26 @@
         body: JSON.stringify(allData)
       }).then(() => {
         document.getElementById('successSound').play();
-        location.reload();
+        location.reload(); 
       });
     }
 
     function renderHistory(list) {
       const div = document.getElementById('historyList');
-      if (!list || list.length === 0) { div.innerHTML = '尚未有歷史紀錄'; return; }
+      if (!list || list.length === 0) { div.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">尚未有歷史紀錄</p>'; return; }
       div.innerHTML = list.map(h => {
+        // 🌟 核心修正：將 portrait=true 修正為 portrait=false 以達到完美的橫式列印 (Landscape)
         const match = h.url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        const pdfUrl = match ? `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=pdf&size=A4&portrait=true&fitw=true&gridlines=false` : h.url;
+        const pdfUrl = match ? `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=pdf&size=A4&portrait=false&fitw=true&gridlines=false` : h.url;
         return `
         <div class="history-item">
-          <label style="display: flex; align-items: center; gap: 8px;">
-            <input type="checkbox" class="history-cb" value="${pdfUrl}">
+          <label style="display: flex; align-items: center; gap: 8px; cursor:pointer;">
+            <input type="checkbox" class="history-cb" value="${pdfUrl}" style="width:18px; height:18px; cursor:pointer;">
             <strong>${h.gradeClass}班</strong> (${h.count}人)
           </label>
-          <div style="font-size:0.8rem; color:#888; margin-left:25px; margin-top:5px;">
+          <div style="font-size:0.85rem; color:#888; margin-left:26px; margin-top:5px;">
             ${h.time}<br>
-            <a href="${h.url}" target="_blank" style="color:var(--sage-green);">[試算表]</a>
+            <a href="${h.url}" target="_blank" style="color:var(--sage-green); font-weight:bold; text-decoration:none;">[查看原始試算表]</a>
           </div>
         </div>
         `;
@@ -380,8 +374,25 @@
 
     function batchDownloadPdfs() {
       const cbs = document.querySelectorAll('.history-cb:checked');
-      if (cbs.length === 0) return alert('請先勾選！');
-      cbs.forEach((cb, i) => { setTimeout(() => { window.open(cb.value, '_blank'); }, i * 1000); });
+      if (cbs.length === 0) return alert('👉 請先勾選要下載的班級！');
+      
+      const btn = document.querySelector('.btn-batch-download');
+      btn.innerText = '⏳ 正在連續下載...';
+      btn.disabled = true;
+
+      let delay = 0;
+      cbs.forEach((cb, index) => {
+        setTimeout(() => {
+          window.open(cb.value, '_blank');
+          if (index === cbs.length - 1) {
+            setTimeout(() => {
+              btn.innerText = '🖨️ 批次下載打勾的 PDF';
+              btn.disabled = false;
+            }, 2000);
+          }
+        }, delay);
+        delay += 1000; 
+      });
     }
 
     function closeModal() { document.getElementById('batchModal').style.display = 'none'; }
