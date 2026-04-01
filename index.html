@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統v2.1.0</title>
+  <title>作業抽查管理系統 - 窄邊界防跨頁版 v2.3.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
@@ -27,11 +27,9 @@
     .class-card:hover { border-color: var(--sage-green); }
     .card-settings { background: #fff; border: 1px dashed #ccc; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
 
-    /* 🌟 優化歷史面板：加上最大高度與卷軸 */
     .history-panel { width: 420px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); max-height: 85vh; display: flex; flex-direction: column;}
     .history-panel h3 { margin-top: 0; font-size: 1.5rem; color: var(--brown); border-bottom: 3px solid var(--earth); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
     #historyList { overflow-y: auto; flex: 1; padding-right: 5px; }
-    /* 自訂捲軸樣式 */
     #historyList::-webkit-scrollbar { width: 6px; }
     #historyList::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
     
@@ -49,6 +47,7 @@
     .btn-batch { background: var(--earth); color: white; }
     .btn-submit { background: var(--sage-green); color: white; width: 100%; font-size: 1.5rem; padding: 20px; margin-top: 20px; }
     .btn-action:hover { opacity: 0.9; transform: translateY(-2px); }
+    .btn-submit:disabled { background: #999; cursor: not-allowed; transform: none; box-shadow: none; }
 
     #batchModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
     .modal-content { background: white; padding: 35px; border-radius: 25px; width: 600px; max-width: 90%; }
@@ -61,7 +60,7 @@
 </head>
 <body>
 
-  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.1.0 - 橫印與防快取優化版</div>
+  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.3.0 - 窄邊界防跨頁版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
@@ -144,7 +143,6 @@
     let cardCount = 0;
 
     window.onload = function() {
-      // 🌟 強制加上時間戳記，避免瀏覽器讀取快取的舊歷史紀錄
       fetch(`${GAS_URL}?action=initData&t=${new Date().getTime()}`)
         .then(res => res.json())
         .then(res => {
@@ -284,7 +282,7 @@
       closeModal();
     }
 
-    function submitAll() {
+    async function submitAll() {
       const isSync = document.getElementById('syncGlobal').checked;
       const cards = document.querySelectorAll('.class-card');
       const allData = [];
@@ -314,7 +312,7 @@
           const seat = row.querySelector('.st-seat').value;
           const name = row.querySelector('.st-name').value;
           const count = row.querySelector('.st-warn-input').value;
-          if (seat && name !== '查無此人') {
+          if (seat && name !== '查無此人' && name !== '等待...') {
             students.push({ seatNo: seat, name: name, penalty: `警告共 ${count} 支` });
           }
         });
@@ -329,28 +327,46 @@
         }
       });
 
-      if (allData.length === 0) return alert('清單是空的喔！請先匯入資料。');
+      if (allData.length === 0) return alert('清單是空的喔！請先確認有成功匯入資料。');
       
       document.getElementById('loading').style.display = 'flex';
-      document.getElementById('finalSubmit').innerText = '⏳ PDF 產出中，請稍候...';
+      const submitBtn = document.getElementById('finalSubmit');
+      submitBtn.disabled = true;
       
-      fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(allData)
-      }).then(() => {
-        document.getElementById('successSound').play();
+      let successCount = 0;
+
+      for (let i = 0; i < allData.length; i++) {
+        submitBtn.innerText = `⏳ 產出中：${allData[i].gradeClass}班 (${i + 1}/${allData.length})...`;
+        try {
+          const res = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify([allData[i]])
+          });
+          const resJson = await res.json();
+          if(resJson.status === 'success') {
+            successCount++;
+          }
+        } catch (err) {
+          console.error(`❌ ${allData[i].gradeClass}班 處理失敗`, err);
+        }
+      }
+
+      document.getElementById('successSound').play();
+      submitBtn.innerText = `✅ 完成！成功產出 ${successCount} 個班級的獎懲表`;
+      
+      setTimeout(() => {
         location.reload(); 
-      });
+      }, 2000);
     }
 
     function renderHistory(list) {
       const div = document.getElementById('historyList');
       if (!list || list.length === 0) { div.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">尚未有歷史紀錄</p>'; return; }
       div.innerHTML = list.map(h => {
-        // 🌟 核心修正：將 portrait=true 修正為 portrait=false 以達到完美的橫式列印 (Landscape)
+        // 🌟 核心修正：加入 top, bottom, left, right margin 參數，強制縮減邊界防跨頁
         const match = h.url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        const pdfUrl = match ? `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=pdf&size=A4&portrait=false&fitw=true&gridlines=false` : h.url;
+        const pdfUrl = match ? `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=pdf&size=A4&portrait=false&fitw=true&gridlines=false&top_margin=0.2&bottom_margin=0.2&left_margin=0.2&right_margin=0.2` : h.url;
         return `
         <div class="history-item">
           <label style="display: flex; align-items: center; gap: 8px; cursor:pointer;">
