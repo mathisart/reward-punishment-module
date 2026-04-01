@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 - 批次上傳模組 v1.4.0</title>
+  <title>作業抽查管理系統 - 全域智慧解析模組 v1.5.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     /* 延續森林系配色 */
@@ -12,8 +12,13 @@
     .main-wrapper { display: flex; gap: 30px; width: 100%; max-width: 1400px; align-items: flex-start; }
     
     .container { flex: 1; background: var(--soft-white); padding: 45px; border-radius: 35px; box-shadow: 0 20px 60px rgba(96,108,56,0.12); border-top: 20px solid var(--sage-green); }
-    h1 { color: var(--sage-green); text-align: center; margin-bottom: 45px; font-size: 2.8rem; letter-spacing: 2px; }
-    .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 35px; margin-bottom: 40px; position: relative; }
+    h1 { color: var(--sage-green); text-align: center; margin-bottom: 25px; font-size: 2.8rem; letter-spacing: 2px; }
+    
+    /* 頂部控制區 */
+    .top-controls { display: flex; gap: 15px; margin-bottom: 40px; background: #f4f8ec; padding: 20px; border-radius: 20px; border: 2px dashed var(--sage-green); }
+    
+    .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 35px; margin-bottom: 40px; position: relative; transition: 0.3s; }
+    .class-card:hover { border-color: var(--earth); }
     
     /* 歷史面板 */
     .history-panel { width: 400px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
@@ -27,17 +32,16 @@
     .st-name { border: none; font-weight: bold; color: var(--wood-green); width: 100px; background: transparent; }
 
     /* 按鈕組 */
-    .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-    .btn-action { padding: 12px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn-action { padding: 15px 25px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 1.1rem; flex: 1; }
     .btn-add { background: #f0f0f0; color: #666; }
-    .btn-batch { background: var(--earth); color: white; }
-    .btn-submit { background: var(--sage-green); color: white; width: 100%; font-size: 1.4rem; padding: 20px; margin-top: 30px; }
+    .btn-batch { background: var(--earth); color: white; box-shadow: 0 4px 10px rgba(221,161,94,0.3); }
+    .btn-submit { background: var(--sage-green); color: white; width: 100%; font-size: 1.5rem; padding: 20px; margin-top: 20px; box-shadow: 0 4px 15px rgba(96,108,56,0.4); }
     .btn-action:hover { opacity: 0.9; transform: translateY(-2px); }
 
     /* 批次輸入彈窗 (Modal) */
     #batchModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
-    .modal-content { background: white; padding: 30px; border-radius: 25px; width: 500px; max-width: 90%; }
-    textarea { width: 100%; height: 200px; margin: 15px 0; padding: 15px; border: 2px solid #ddd; border-radius: 15px; font-size: 1.1rem; box-sizing: border-box; font-family: monospace;}
+    .modal-content { background: white; padding: 35px; border-radius: 25px; width: 600px; max-width: 90%; }
+    textarea { width: 100%; height: 250px; margin: 15px 0; padding: 15px; border: 2px solid #ddd; border-radius: 15px; font-size: 1.1rem; box-sizing: border-box; font-family: monospace; }
     
     #loading { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
     .spinner { width: 30px; height: 30px; border: 4px solid #eee; border-top: 4px solid var(--sage-green); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -46,14 +50,19 @@
 </head>
 <body>
 
-  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.4.0 - 試算表智慧解析版</div>
+  <div style="background:var(--wood-green); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.5.0 - 全域自動分班版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
     <div class="container">
+      
+      <div class="top-controls" id="topControls" style="display:none;">
+        <button class="btn-action btn-batch" onclick="openGlobalBatchModal()">📋 貼上試算表 (自動分班)</button>
+        <button class="btn-action btn-add" onclick="addClassCard()">＋ 手動新增班級</button>
+      </div>
+
       <div id="classContainer"></div>
       
-      <button class="btn-action btn-add" id="btnAddClass" style="display:none; width:100%; margin-bottom:10px;" onclick="addClassCard()">＋ 新增班級區塊</button>
       <button class="btn-action btn-submit" id="finalSubmit" style="display:none;" onclick="submitAll()">💾 儲存並產出所有班級 PDF</button>
       
       <div id="loading">
@@ -70,11 +79,16 @@
 
   <div id="batchModal">
     <div class="modal-content">
-      <h3 style="margin-top:0; color:var(--brown);">🚀 試算表快速匯入</h3>
-      <p style="font-size:0.9rem; color:#666;">請直接複製 Excel 的「學號/班級座號 (如 71025)」與「姓名」貼上：<br>(系統會自動抓取末兩碼作為座號，並略過姓名文字)</p>
-      <textarea id="batchInput" placeholder="範例：&#10;71025 黃乙珊&#10;71028 吳宥婕&#10;71105 劉子洋 2 (最後的數字代表支數，若無則預設1支)"></textarea>
+      <h3 style="margin-top:0; color:var(--brown);">🚀 跨班級智慧解析</h3>
+      <p style="font-size:0.95rem; color:#666; line-height:1.5;">
+        請直接貼上包含多個班級的 Excel 清單：<br>
+        1. 系統會擷取前 3 碼作為「班級」(如 710)。<br>
+        2. 系統會擷取後 2 碼作為「座號」(如 25)。<br>
+        3. 系統將自動為您建立該班級的區塊並填入資料！
+      </p>
+      <textarea id="batchInput" placeholder="貼上範例：&#10;71025 黃乙珊&#10;71028 吳宥婕&#10;71105 劉子洋 2&#10;71201 王宏凱"></textarea>
       <div style="display:flex; gap:10px;">
-        <button class="btn-action btn-batch" style="flex:2;" onclick="processBatch()">智慧解析並匯入</button>
+        <button class="btn-action btn-batch" style="flex:2;" onclick="processGlobalBatch()">✨ 開始智慧分班</button>
         <button class="btn-action btn-add" style="flex:1;" onclick="closeModal()">取消</button>
       </div>
     </div>
@@ -87,7 +101,6 @@
     
     let studentDataMap = {};
     let cardCount = 0;
-    let currentTargetCardId = null;
 
     window.onload = function() {
       fetch(`${GAS_URL}?action=initData`)
@@ -96,23 +109,28 @@
           studentDataMap = res.data.students;
           renderHistory(res.data.history);
           document.getElementById('loading').style.display = 'none';
-          document.getElementById('btnAddClass').style.display = 'block';
+          document.getElementById('topControls').style.display = 'flex';
           document.getElementById('finalSubmit').style.display = 'block';
-          addClassCard();
         });
     };
 
-    function addClassCard() {
+    // 參數 targetClass 允許我們在建立卡片時，直接指定它是哪一班
+    function addClassCard(targetClass = null) {
       cardCount++;
       const container = document.getElementById('classContainer');
       const card = document.createElement('div');
       card.className = 'class-card';
-      card.id = `card-${cardCount}`;
-      const classOptions = Object.keys(studentDataMap).sort().map(c => `<option value="${c}">${c} 班</option>`).join('');
+      const cardId = `card-${cardCount}`;
+      card.id = cardId;
+      
+      const classOptions = Object.keys(studentDataMap).sort().map(c => {
+        const isSelected = (c === targetClass) ? 'selected' : '';
+        return `<option value="${c}" ${isSelected}>${c} 班</option>`;
+      }).join('');
       
       card.innerHTML = `
         <span style="position:absolute; top:20px; right:25px; cursor:pointer; font-size:1.5rem; color:#ccc;" onclick="this.closest('.class-card').remove()">✕</span>
-        <h3 style="margin-top:0; color:var(--sage-green);">[ 班級單位 #${cardCount} ]</h3>
+        <h3 style="margin-top:0; color:var(--sage-green);">[ 班級單位 ]</h3>
         <div style="display:grid; grid-template-columns: 1fr 1fr 2fr; gap:15px;">
           <div><label>班級</label><select class="sel-class" style="width:100%">${classOptions}</select></div>
           <div><label>日期</label><input type="date" class="inp-date" value="${new Date().toISOString().split('T')[0]}" style="width:100%"></div>
@@ -122,12 +140,10 @@
           <thead><tr><th>座號</th><th>姓名</th><th>警告支數</th><th>操作</th></tr></thead>
           <tbody class="student-list"></tbody>
         </table>
-        <div class="btn-group">
-          <button class="btn-action btn-add" onclick="addStudentRow('${card.id}')">＋ 單筆新增</button>
-          <button class="btn-action btn-batch" onclick="openBatchModal('${card.id}')">📋 直接貼上試算表</button>
-        </div>
+        <button class="btn-action btn-add" style="margin-top:15px; width:100%; padding:10px;" onclick="addStudentRow('${cardId}')">＋ 手動新增單筆學生</button>
       `;
       container.appendChild(card);
+      return cardId;
     }
 
     function addStudentRow(cardId, seat = '', count = 1) {
@@ -142,7 +158,6 @@
       tbody.appendChild(tr);
 
       const seatInp = tr.querySelector('.st-seat');
-      
       const update = () => {
         const classId = document.querySelector(`#${cardId} .sel-class`).value;
         const nameInp = tr.querySelector('.st-name');
@@ -156,13 +171,14 @@
       };
 
       seatInp.addEventListener('input', update);
+      // 如果班級下拉選單改變，也重新驗證這行
+      document.querySelector(`#${cardId} .sel-class`).addEventListener('change', update);
+      
       if(seat) update(); 
-      seatInp.focus();
     }
 
-    // --- 批次匯入邏輯 (v1.4.0 智慧升級版) ---
-    function openBatchModal(cardId) {
-      currentTargetCardId = cardId;
+    // --- 🌟 全域智慧分班核心邏輯 ---
+    function openGlobalBatchModal() {
       document.getElementById('batchModal').style.display = 'flex';
       document.getElementById('batchInput').value = '';
       document.getElementById('batchInput').focus();
@@ -172,45 +188,68 @@
       document.getElementById('batchModal').style.display = 'none';
     }
 
-    function processBatch() {
+    function processGlobalBatch() {
       const rawText = document.getElementById('batchInput').value.trim();
       if (!rawText) return;
 
       const lines = rawText.split('\n');
-      let importCount = 0;
+      let successCount = 0;
+      let groupedData = {}; // 用來存放分班結果，例如: { "710": [{seat:"25", count:1}], "711": [...] }
 
+      // 1. 拆解並將資料分組
       lines.forEach(line => {
-        // 使用正則表達式切分空白、Tab
         const parts = line.split(/[\s\t]+/).filter(p => p.trim() !== "");
         if (parts.length === 0) return;
 
-        let rawSeat = parts[0]; 
-        let finalSeat = "";
+        let rawId = parts[0]; 
+        
+        // 必須是 5 位數才能判斷班級 (例如 71025)
+        if (rawId.length === 5 && !isNaN(rawId)) {
+          const classStr = rawId.substring(0, 3); // "710"
+          const seatStr = parseInt(rawId.substring(3, 5), 10).toString(); // "25" (去掉開頭的0)
 
-        // 智慧解析：如果第一欄是 5 位數 (例如 71025)，只取最後 2 碼 (25)
-        if (rawSeat.length === 5 && !isNaN(rawSeat)) {
-          finalSeat = parseInt(rawSeat.substring(3), 10).toString();
-        } else {
-          finalSeat = parseInt(rawSeat, 10).toString();
-        }
-
-        // 如果連座號都解析不出來，就跳過這行
-        if (isNaN(parseInt(finalSeat))) return;
-
-        // 智慧尋找警告支數：略過中文姓名，找看看有沒有數字
-        let finalCount = 1; // 預設 1 支
-        for (let i = 1; i < parts.length; i++) {
-          if (!isNaN(parts[i]) && parts[i] !== "") {
-            finalCount = parseInt(parts[i], 10);
-            break; 
+          // 尋找警告支數 (找數字)
+          let warnCount = 1;
+          for (let i = 1; i < parts.length; i++) {
+            if (!isNaN(parts[i]) && parts[i] !== "") {
+              warnCount = parseInt(parts[i], 10);
+              break; 
+            }
           }
-        }
 
-        addStudentRow(currentTargetCardId, finalSeat, finalCount);
-        importCount++;
+          if (!groupedData[classStr]) groupedData[classStr] = [];
+          groupedData[classStr].push({ seat: seatStr, count: warnCount });
+          successCount++;
+        }
       });
 
-      alert(`成功解析並匯入 ${importCount} 筆學生資料！`);
+      // 2. 根據分組結果，自動建立卡片並填入資料
+      for (const [classId, students] of Object.entries(groupedData)) {
+        // 防呆：確認資料庫裡真的有這個班級
+        if (!studentDataMap[classId]) continue; 
+
+        // 檢查畫面上是不是已經有這個班級的卡片了？
+        let targetCardId = null;
+        const existingCards = document.querySelectorAll('.class-card');
+        existingCards.forEach(card => {
+          const selectVal = card.querySelector('.sel-class').value;
+          if (selectVal === classId) {
+            targetCardId = card.id;
+          }
+        });
+
+        // 如果沒有，就自動建一張，並指定班級
+        if (!targetCardId) {
+          targetCardId = addClassCard(classId);
+        }
+
+        // 把學生資料倒進該卡片
+        students.forEach(st => {
+          addStudentRow(targetCardId, st.seat, st.count);
+        });
+      }
+
+      alert(`✅ 智慧分班完成！共解析並匯入 ${successCount} 筆資料。`);
       closeModal();
     }
 
@@ -238,10 +277,10 @@
         }
       });
 
-      if (allData.length === 0) { alert('清單是空的喔！'); return; }
+      if (allData.length === 0) { alert('清單是空的喔！請先匯入資料。'); return; }
 
       document.getElementById('loading').style.display = 'flex';
-      document.getElementById('finalSubmit').innerText = '⏳ 處理中...';
+      document.getElementById('finalSubmit').innerText = '⏳ PDF 產出中，請稍候...';
       
       fetch(GAS_URL, {
         method: 'POST',
@@ -252,7 +291,7 @@
       .then(res => {
         if (res.status === 'success') {
           document.getElementById('successSound').play();
-          alert('✅ 資料已送出，請至右側或 Google 試算表查看 PDF！');
+          alert('✅ 所有班級獎懲建議表已成功產出！');
           location.reload();
         }
       });
