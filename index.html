@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 - 自動合併累加模組 v1.6.0</title>
+  <title>作業抽查管理系統 - 終極批次列印版 v1.7.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
@@ -17,8 +17,14 @@
     .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 35px; margin-bottom: 40px; position: relative; transition: 0.3s; }
     .class-card:hover { border-color: var(--earth); }
     
-    .history-panel { width: 400px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
-    .history-item { padding: 12px; margin-bottom: 10px; background: #fffdf5; border-radius: 10px; border: 1px solid #eee; font-size: 0.95rem; }
+    /* 🌟 歷史面板強化 */
+    .history-panel { width: 420px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
+    .history-panel h3 { margin-top: 0; font-size: 1.5rem; color: var(--brown); border-bottom: 3px solid var(--earth); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;}
+    .history-item { padding: 12px; margin-bottom: 10px; background: #fffdf5; border-radius: 10px; border-left: 6px solid var(--sage-green); border-right: 1px solid #eee; border-top: 1px solid #eee; border-bottom: 1px solid #eee; font-size: 1rem; transition: 0.2s; }
+    .history-item:hover { background: #f4f8ec; }
+    .btn-batch-download { background: var(--sage-green); color: white; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; width: 100%; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 5px 10px rgba(96,108,56,0.2); }
+    .btn-batch-download:hover { opacity: 0.9; transform: translateY(-2px); }
+    #blockWarning { display:none; background-color: #ffe8e8; border: 2px solid #ff4d4d; color: #d32f2f; padding: 15px; border-radius: 10px; margin-top: 15px; font-weight: bold; line-height: 1.5; font-size: 0.95rem;}
 
     table { width: 100%; border-spacing: 0 10px; margin-top: 15px; }
     td { background: white; padding: 12px; border-radius: 12px; border: 1px solid #f0f0f0; }
@@ -43,7 +49,7 @@
 </head>
 <body>
 
-  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.6.0 - 智慧分班與自動累加版</div>
+  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.7.0 - 終極列印優化版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
@@ -65,8 +71,17 @@
     </div>
 
     <div class="history-panel">
-      <h3>📜 產出紀錄回顧</h3>
+      <h3>
+        📜 產出紀錄
+        <button onclick="selectAllHistory()" style="font-size:0.9rem; padding:5px 12px; border-radius:8px; cursor:pointer; background:#eee; border:none; font-weight:bold; color:var(--wood-green);">全選</button>
+      </h3>
       <div id="historyList">讀取中...</div>
+      <button class="btn-batch-download" onclick="batchDownloadPdfs()">🖨️ 批次下載打勾的 PDF</button>
+      
+      <div id="blockWarning">
+        ⚠️ <b>防擋指南</b>：<br>
+        若被瀏覽器阻擋多重下載，請點擊網址列右側的「紅色叉叉視窗」圖示，選擇【一律允許】。
+      </div>
     </div>
   </div>
 
@@ -75,9 +90,9 @@
       <h3 style="margin-top:0; color:var(--brown);">🚀 跨班級智慧解析與累加</h3>
       <p style="font-size:0.95rem; color:#666; line-height:1.5;">
         請直接貼上包含多個班級的 Excel 清單：<br>
-        🌟 <b>新功能</b>：若貼上多筆相同學號，系統將<b>自動合併成一位學生，並累加警告支數！</b>
+        🌟 若貼上多筆相同學號，系統將自動合併成一位學生並累加警告支數！
       </p>
-      <textarea id="batchInput" placeholder="貼上範例：&#10;71025 黃乙珊 (缺交國文)&#10;71025 黃乙珊 (缺交數學) -> 系統會自動合併為 710班 25號，警告 2 支&#10;71028 吳宥婕&#10;71105 劉子洋 2"></textarea>
+      <textarea id="batchInput" placeholder="貼上範例：&#10;71025 黃乙珊&#10;71025 黃乙珊&#10;71028 吳宥婕&#10;71105 劉子洋 2"></textarea>
       <div style="display:flex; gap:10px;">
         <button class="btn-action btn-batch" style="flex:2;" onclick="processGlobalBatch()">✨ 開始智慧分班與累加</button>
         <button class="btn-action btn-add" style="flex:1;" onclick="closeModal()">取消</button>
@@ -162,7 +177,6 @@
 
       seatInp.addEventListener('input', update);
       document.querySelector(`#${cardId} .sel-class`).addEventListener('change', update);
-      
       if(seat) update(); 
     }
 
@@ -172,85 +186,59 @@
       document.getElementById('batchInput').focus();
     }
 
-    function closeModal() {
-      document.getElementById('batchModal').style.display = 'none';
-    }
+    function closeModal() { document.getElementById('batchModal').style.display = 'none'; }
 
-    // ✨ v1.6.0 核心升級：自動合併與累加邏輯
     function processGlobalBatch() {
       const rawText = document.getElementById('batchInput').value.trim();
       if (!rawText) return;
 
       const lines = rawText.split('\n');
       let successCount = 0;
-      let groupedData = {}; // 格式: { "710": { "25": 2, "28": 1 }, "711": { "05": 3 } }
+      let groupedData = {}; 
 
-      // 1. 拆解資料並自動累加
       lines.forEach(line => {
         const parts = line.split(/[\s\t]+/).filter(p => p.trim() !== "");
         if (parts.length === 0) return;
 
         let rawId = parts[0]; 
         
-        // 必須是 5 位數才能判斷班級 (例如 71025)
         if (rawId.length === 5 && !isNaN(rawId)) {
-          const classStr = rawId.substring(0, 3); // "710"
-          const seatStr = parseInt(rawId.substring(3, 5), 10).toString(); // "25"
+          const classStr = rawId.substring(0, 3); 
+          const seatStr = parseInt(rawId.substring(3, 5), 10).toString(); 
 
-          // 尋找警告支數 (如果有填寫數字，就加該數字；沒填寫，預設算 1 支)
           let warnCount = 1;
           for (let i = 1; i < parts.length; i++) {
-            if (!isNaN(parts[i]) && parts[i] !== "") {
-              warnCount = parseInt(parts[i], 10);
-              break; 
-            }
+            if (!isNaN(parts[i]) && parts[i] !== "") { warnCount = parseInt(parts[i], 10); break; }
           }
 
-          // 初始化班級與座號物件
-          if (!groupedData[classStr]) {
-            groupedData[classStr] = {};
-          }
-          
-          // ✨ 自動累加邏輯：如果這個座號已經存在，就把新的支數加上去；若不存在則建立
+          if (!groupedData[classStr]) groupedData[classStr] = {};
           if (groupedData[classStr][seatStr]) {
             groupedData[classStr][seatStr] += warnCount;
           } else {
             groupedData[classStr][seatStr] = warnCount;
           }
-          
           successCount++;
         }
       });
 
-      // 2. 根據合併後的結果，自動建立卡片並填入資料
       let uniqueStudentCount = 0;
-
       for (const [classId, seatMap] of Object.entries(groupedData)) {
-        if (!studentDataMap[classId]) continue; // 略過資料庫沒有的班級
-
-        // 檢查畫面上是不是已經有這個班級的卡片
+        if (!studentDataMap[classId]) continue; 
         let targetCardId = null;
         const existingCards = document.querySelectorAll('.class-card');
         existingCards.forEach(card => {
-          const selectVal = card.querySelector('.sel-class').value;
-          if (selectVal === classId) {
-            targetCardId = card.id;
-          }
+          if (card.querySelector('.sel-class').value === classId) targetCardId = card.id;
         });
 
-        // 若無則新建
-        if (!targetCardId) {
-          targetCardId = addClassCard(classId);
-        }
+        if (!targetCardId) targetCardId = addClassCard(classId);
 
-        // 把合併後的學生與累加支數倒進該卡片
         for (const [seatStr, totalCount] of Object.entries(seatMap)) {
           addStudentRow(targetCardId, seatStr, totalCount);
           uniqueStudentCount++;
         }
       }
 
-      alert(`✅ 智慧解析完成！\n共讀取 ${successCount} 行資料，\n自動合併為 ${uniqueStudentCount} 位學生。`);
+      alert(`✅ 智慧解析完成！共讀取 ${successCount} 行資料，自動合併為 ${uniqueStudentCount} 位學生。`);
       closeModal();
     }
 
@@ -280,7 +268,7 @@
       if (allData.length === 0) { alert('清單是空的喔！請先匯入資料。'); return; }
 
       document.getElementById('loading').style.display = 'flex';
-      document.getElementById('finalSubmit').innerText = '⏳ PDF 產出中，請稍候...';
+      document.getElementById('finalSubmit').innerText = '⏳ 後端處理中，請稍候...';
       
       fetch(GAS_URL, {
         method: 'POST',
@@ -292,21 +280,63 @@
         if (res.status === 'success') {
           document.getElementById('successSound').play();
           alert('✅ 所有班級獎懲建議表已成功產出！');
-          location.reload();
+          location.reload(); // 重新載入，讓歷史紀錄更新出最新的一批
         }
       });
     }
 
+    // 🌟 批次列印核心邏輯回歸
     function renderHistory(list) {
       const div = document.getElementById('historyList');
-      if (!list || list.length === 0) { div.innerHTML = '<p>尚未有歷史紀錄</p>'; return; }
-      div.innerHTML = list.map(h => `
+      if (!list || list.length === 0) { div.innerHTML = '<p style="text-align:center; color:#999;">尚未有歷史紀錄</p>'; return; }
+      
+      div.innerHTML = list.map(h => {
+        // 將 Google Spreadsheet 網址轉成 PDF 直接下載連結
+        const match = h.url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        const pdfUrl = match ? `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=pdf&size=A4&portrait=true&fitw=true&gridlines=false` : h.url;
+
+        return `
         <div class="history-item">
-          <strong>${h.gradeClass} 班</strong> (${h.count}人)<br>
-          <small style="color:#999;">${h.time}</small><br>
-          <a href="${h.url}" target="_blank" style="color:var(--sage-green); font-weight:bold; font-size:0.9rem;">查看檔案 ↗</a>
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" class="history-cb" value="${pdfUrl}" style="width: 20px; height: 20px; cursor: pointer;">
+            <strong style="color:var(--wood-green); font-size:1.1rem;">📂 ${h.gradeClass}班</strong> (${h.count}人)
+          </label>
+          <div style="margin-left: 30px; margin-top: 5px; font-size: 0.85rem; color: #888;">
+            🕒 ${h.time} | <a href="${h.url}" target="_blank" style="color:var(--sage-green); text-decoration:none; font-weight:bold;">[查看原始試算表]</a>
+          </div>
         </div>
-      `).join('');
+        `;
+      }).join('');
+    }
+
+    function selectAllHistory() {
+      const checkboxes = document.querySelectorAll('.history-cb');
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      checkboxes.forEach(cb => cb.checked = !allChecked);
+    }
+
+    function batchDownloadPdfs() {
+      const checkboxes = document.querySelectorAll('.history-cb:checked');
+      if (checkboxes.length === 0) { alert('👉 請先勾選要下載的班級！'); return; }
+      
+      const btn = document.querySelector('.btn-batch-download');
+      btn.innerText = '⏳ 正在連續下載...';
+      btn.disabled = true;
+      document.getElementById('blockWarning').style.display = 'block'; 
+
+      let delay = 0;
+      checkboxes.forEach((cb, index) => {
+        setTimeout(() => {
+          window.open(cb.value, '_blank');
+          if (index === checkboxes.length - 1) {
+            setTimeout(() => {
+              btn.innerText = '🖨️ 批次下載打勾的 PDF';
+              btn.disabled = false;
+            }, 2000);
+          }
+        }, delay);
+        delay += 1000; // 每秒彈出一個下載，避免瀏覽器崩潰
+      });
     }
   </script>
 </body>
