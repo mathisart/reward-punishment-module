@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 - 全域智慧解析模組 v1.5.0</title>
+  <title>作業抽查管理系統 - 自動合併累加模組 v1.6.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* 延續森林系配色 */
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
     body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--cream); color: var(--wood-green); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
     .main-wrapper { display: flex; gap: 30px; width: 100%; max-width: 1400px; align-items: flex-start; }
@@ -14,31 +13,25 @@
     .container { flex: 1; background: var(--soft-white); padding: 45px; border-radius: 35px; box-shadow: 0 20px 60px rgba(96,108,56,0.12); border-top: 20px solid var(--sage-green); }
     h1 { color: var(--sage-green); text-align: center; margin-bottom: 25px; font-size: 2.8rem; letter-spacing: 2px; }
     
-    /* 頂部控制區 */
     .top-controls { display: flex; gap: 15px; margin-bottom: 40px; background: #f4f8ec; padding: 20px; border-radius: 20px; border: 2px dashed var(--sage-green); }
-    
     .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 35px; margin-bottom: 40px; position: relative; transition: 0.3s; }
     .class-card:hover { border-color: var(--earth); }
     
-    /* 歷史面板 */
     .history-panel { width: 400px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
     .history-item { padding: 12px; margin-bottom: 10px; background: #fffdf5; border-radius: 10px; border: 1px solid #eee; font-size: 0.95rem; }
 
-    /* 表格與輸入 */
     table { width: 100%; border-spacing: 0 10px; margin-top: 15px; }
     td { background: white; padding: 12px; border-radius: 12px; border: 1px solid #f0f0f0; }
     input, select { padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; }
     .st-seat { width: 60px; text-align: center; font-weight: bold; }
     .st-name { border: none; font-weight: bold; color: var(--wood-green); width: 100px; background: transparent; }
 
-    /* 按鈕組 */
     .btn-action { padding: 15px 25px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 1.1rem; flex: 1; }
     .btn-add { background: #f0f0f0; color: #666; }
     .btn-batch { background: var(--earth); color: white; box-shadow: 0 4px 10px rgba(221,161,94,0.3); }
     .btn-submit { background: var(--sage-green); color: white; width: 100%; font-size: 1.5rem; padding: 20px; margin-top: 20px; box-shadow: 0 4px 15px rgba(96,108,56,0.4); }
     .btn-action:hover { opacity: 0.9; transform: translateY(-2px); }
 
-    /* 批次輸入彈窗 (Modal) */
     #batchModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
     .modal-content { background: white; padding: 35px; border-radius: 25px; width: 600px; max-width: 90%; }
     textarea { width: 100%; height: 250px; margin: 15px 0; padding: 15px; border: 2px solid #ddd; border-radius: 15px; font-size: 1.1rem; box-sizing: border-box; font-family: monospace; }
@@ -50,14 +43,14 @@
 </head>
 <body>
 
-  <div style="background:var(--wood-green); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.5.0 - 全域自動分班版</div>
+  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.6.0 - 智慧分班與自動累加版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
     <div class="container">
       
       <div class="top-controls" id="topControls" style="display:none;">
-        <button class="btn-action btn-batch" onclick="openGlobalBatchModal()">📋 貼上試算表 (自動分班)</button>
+        <button class="btn-action btn-batch" onclick="openGlobalBatchModal()">📋 貼上未交名單 (自動合併與分班)</button>
         <button class="btn-action btn-add" onclick="addClassCard()">＋ 手動新增班級</button>
       </div>
 
@@ -79,16 +72,14 @@
 
   <div id="batchModal">
     <div class="modal-content">
-      <h3 style="margin-top:0; color:var(--brown);">🚀 跨班級智慧解析</h3>
+      <h3 style="margin-top:0; color:var(--brown);">🚀 跨班級智慧解析與累加</h3>
       <p style="font-size:0.95rem; color:#666; line-height:1.5;">
         請直接貼上包含多個班級的 Excel 清單：<br>
-        1. 系統會擷取前 3 碼作為「班級」(如 710)。<br>
-        2. 系統會擷取後 2 碼作為「座號」(如 25)。<br>
-        3. 系統將自動為您建立該班級的區塊並填入資料！
+        🌟 <b>新功能</b>：若貼上多筆相同學號，系統將<b>自動合併成一位學生，並累加警告支數！</b>
       </p>
-      <textarea id="batchInput" placeholder="貼上範例：&#10;71025 黃乙珊&#10;71028 吳宥婕&#10;71105 劉子洋 2&#10;71201 王宏凱"></textarea>
+      <textarea id="batchInput" placeholder="貼上範例：&#10;71025 黃乙珊 (缺交國文)&#10;71025 黃乙珊 (缺交數學) -> 系統會自動合併為 710班 25號，警告 2 支&#10;71028 吳宥婕&#10;71105 劉子洋 2"></textarea>
       <div style="display:flex; gap:10px;">
-        <button class="btn-action btn-batch" style="flex:2;" onclick="processGlobalBatch()">✨ 開始智慧分班</button>
+        <button class="btn-action btn-batch" style="flex:2;" onclick="processGlobalBatch()">✨ 開始智慧分班與累加</button>
         <button class="btn-action btn-add" style="flex:1;" onclick="closeModal()">取消</button>
       </div>
     </div>
@@ -114,7 +105,6 @@
         });
     };
 
-    // 參數 targetClass 允許我們在建立卡片時，直接指定它是哪一班
     function addClassCard(targetClass = null) {
       cardCount++;
       const container = document.getElementById('classContainer');
@@ -171,13 +161,11 @@
       };
 
       seatInp.addEventListener('input', update);
-      // 如果班級下拉選單改變，也重新驗證這行
       document.querySelector(`#${cardId} .sel-class`).addEventListener('change', update);
       
       if(seat) update(); 
     }
 
-    // --- 🌟 全域智慧分班核心邏輯 ---
     function openGlobalBatchModal() {
       document.getElementById('batchModal').style.display = 'flex';
       document.getElementById('batchInput').value = '';
@@ -188,15 +176,16 @@
       document.getElementById('batchModal').style.display = 'none';
     }
 
+    // ✨ v1.6.0 核心升級：自動合併與累加邏輯
     function processGlobalBatch() {
       const rawText = document.getElementById('batchInput').value.trim();
       if (!rawText) return;
 
       const lines = rawText.split('\n');
       let successCount = 0;
-      let groupedData = {}; // 用來存放分班結果，例如: { "710": [{seat:"25", count:1}], "711": [...] }
+      let groupedData = {}; // 格式: { "710": { "25": 2, "28": 1 }, "711": { "05": 3 } }
 
-      // 1. 拆解並將資料分組
+      // 1. 拆解資料並自動累加
       lines.forEach(line => {
         const parts = line.split(/[\s\t]+/).filter(p => p.trim() !== "");
         if (parts.length === 0) return;
@@ -206,9 +195,9 @@
         // 必須是 5 位數才能判斷班級 (例如 71025)
         if (rawId.length === 5 && !isNaN(rawId)) {
           const classStr = rawId.substring(0, 3); // "710"
-          const seatStr = parseInt(rawId.substring(3, 5), 10).toString(); // "25" (去掉開頭的0)
+          const seatStr = parseInt(rawId.substring(3, 5), 10).toString(); // "25"
 
-          // 尋找警告支數 (找數字)
+          // 尋找警告支數 (如果有填寫數字，就加該數字；沒填寫，預設算 1 支)
           let warnCount = 1;
           for (let i = 1; i < parts.length; i++) {
             if (!isNaN(parts[i]) && parts[i] !== "") {
@@ -217,18 +206,29 @@
             }
           }
 
-          if (!groupedData[classStr]) groupedData[classStr] = [];
-          groupedData[classStr].push({ seat: seatStr, count: warnCount });
+          // 初始化班級與座號物件
+          if (!groupedData[classStr]) {
+            groupedData[classStr] = {};
+          }
+          
+          // ✨ 自動累加邏輯：如果這個座號已經存在，就把新的支數加上去；若不存在則建立
+          if (groupedData[classStr][seatStr]) {
+            groupedData[classStr][seatStr] += warnCount;
+          } else {
+            groupedData[classStr][seatStr] = warnCount;
+          }
+          
           successCount++;
         }
       });
 
-      // 2. 根據分組結果，自動建立卡片並填入資料
-      for (const [classId, students] of Object.entries(groupedData)) {
-        // 防呆：確認資料庫裡真的有這個班級
-        if (!studentDataMap[classId]) continue; 
+      // 2. 根據合併後的結果，自動建立卡片並填入資料
+      let uniqueStudentCount = 0;
 
-        // 檢查畫面上是不是已經有這個班級的卡片了？
+      for (const [classId, seatMap] of Object.entries(groupedData)) {
+        if (!studentDataMap[classId]) continue; // 略過資料庫沒有的班級
+
+        // 檢查畫面上是不是已經有這個班級的卡片
         let targetCardId = null;
         const existingCards = document.querySelectorAll('.class-card');
         existingCards.forEach(card => {
@@ -238,22 +238,22 @@
           }
         });
 
-        // 如果沒有，就自動建一張，並指定班級
+        // 若無則新建
         if (!targetCardId) {
           targetCardId = addClassCard(classId);
         }
 
-        // 把學生資料倒進該卡片
-        students.forEach(st => {
-          addStudentRow(targetCardId, st.seat, st.count);
-        });
+        // 把合併後的學生與累加支數倒進該卡片
+        for (const [seatStr, totalCount] of Object.entries(seatMap)) {
+          addStudentRow(targetCardId, seatStr, totalCount);
+          uniqueStudentCount++;
+        }
       }
 
-      alert(`✅ 智慧分班完成！共解析並匯入 ${successCount} 筆資料。`);
+      alert(`✅ 智慧解析完成！\n共讀取 ${successCount} 行資料，\n自動合併為 ${uniqueStudentCount} 位學生。`);
       closeModal();
     }
 
-    // --- 提交與紀錄功能 ---
     function submitAll() {
       const cards = document.querySelectorAll('.class-card');
       const allData = [];
