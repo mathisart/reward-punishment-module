@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 - 窄邊界防跨頁版 v2.3.0</title>
+  <title>作業抽查管理系統 - 防漏單限速版 v2.3.1</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
@@ -60,7 +60,7 @@
 </head>
 <body>
 
-  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.3.0 - 窄邊界防跨頁版</div>
+  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.3.1 - 防漏單排隊限速版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
@@ -137,7 +137,7 @@
   <audio id="successSound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg"></audio>
 
   <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwY41cZ2wHcmyUSJG-MQEi04aA0Cq36u-pkG-mbKxNLI3LBJw07UhHJiJVknlOw_p6x/exec'; 
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxv1_4kjhx42CpoQoLmVLEeryDGwgZD73qsbMV2J4MezUsw1dRrXE01JkZWYb0w8M28/exec'; 
     
     let studentDataMap = {};
     let cardCount = 0;
@@ -282,6 +282,9 @@
       closeModal();
     }
 
+    // 🌟 核心防漏單機制：Delay 延遲函數
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
     async function submitAll() {
       const isSync = document.getElementById('syncGlobal').checked;
       const cards = document.querySelectorAll('.class-card');
@@ -312,6 +315,7 @@
           const seat = row.querySelector('.st-seat').value;
           const name = row.querySelector('.st-name').value;
           const count = row.querySelector('.st-warn-input').value;
+          // 檢查如果有填座號，但顯示查無此人，可能是空號，不應該送出
           if (seat && name !== '查無此人' && name !== '等待...') {
             students.push({ seatNo: seat, name: name, penalty: `警告共 ${count} 支` });
           }
@@ -327,7 +331,7 @@
         }
       });
 
-      if (allData.length === 0) return alert('清單是空的喔！請先確認有成功匯入資料。');
+      if (allData.length === 0) return alert('清單是空的喔！請先確認有成功匯入且有對應到正確姓名。');
       
       document.getElementById('loading').style.display = 'flex';
       const submitBtn = document.getElementById('finalSubmit');
@@ -350,6 +354,11 @@
         } catch (err) {
           console.error(`❌ ${allData[i].gradeClass}班 處理失敗`, err);
         }
+
+        // 🌟 防漏單關鍵：每傳送一個班級，強制暫停 1.5 秒，避免 Google 伺服器拒絕連線
+        if (i < allData.length - 1) {
+          await sleep(1500); 
+        }
       }
 
       document.getElementById('successSound').play();
@@ -364,7 +373,6 @@
       const div = document.getElementById('historyList');
       if (!list || list.length === 0) { div.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">尚未有歷史紀錄</p>'; return; }
       div.innerHTML = list.map(h => {
-        // 🌟 核心修正：加入 top, bottom, left, right margin 參數，強制縮減邊界防跨頁
         const match = h.url.match(/\/d\/([a-zA-Z0-9-_]+)/);
         const pdfUrl = match ? `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=pdf&size=A4&portrait=false&fitw=true&gridlines=false&top_margin=0.2&bottom_margin=0.2&left_margin=0.2&right_margin=0.2` : h.url;
         return `
