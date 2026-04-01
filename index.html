@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 v1.9.0</title>
+  <title>作業抽查管理系統v2.0.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
@@ -15,22 +15,29 @@
     
     .top-controls { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f8ec; padding: 20px; border-radius: 20px; border: 2px dashed var(--sage-green); }
     
-    /* 🌟 新增：全域設定區樣式 */
-    .global-settings { background: #fff; border: 2px solid var(--earth); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(221,161,94,0.1); }
+    /* 全域設定區 */
+    .global-settings { background: #fff; border: 2px solid var(--earth); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(221,161,94,0.1); position: relative; }
+    .sync-toggle { position: absolute; top: 25px; right: 25px; background: var(--cream); padding: 8px 15px; border-radius: 12px; border: 2px solid var(--sage-green); font-weight: bold; cursor: pointer; color: var(--wood-green); display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+    .sync-toggle:hover { background: #e9edc9; }
+    
     .form-grid { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 15px; margin-bottom: 15px; }
     .form-group { display: flex; flex-direction: column; }
     label { font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; color: var(--brown); }
 
-    .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 25px; margin-bottom: 30px; position: relative; }
+    .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 25px; margin-bottom: 30px; position: relative; transition: 0.3s; }
+    .class-card:hover { border-color: var(--sage-green); }
     
+    /* 班級個別設定區 */
+    .card-settings { background: #fff; border: 1px dashed #ccc; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+
     .history-panel { width: 420px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
     .history-panel h3 { margin-top: 0; font-size: 1.5rem; color: var(--brown); border-bottom: 3px solid var(--earth); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;}
     .history-item { padding: 12px; margin-bottom: 10px; background: #fffdf5; border-radius: 10px; border-left: 6px solid var(--sage-green); border: 1px solid #eee; font-size: 1rem; }
     .btn-batch-download { background: var(--sage-green); color: white; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; width: 100%; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 5px 10px rgba(96,108,56,0.2); }
 
-    table { width: 100%; border-spacing: 0 10px; margin-top: 10px; }
-    td { background: white; padding: 12px; border-radius: 12px; border: 1px solid #f0f0f0; }
-    input, select { padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; background: white; font-family: inherit; }
+    table { width: 100%; border-spacing: 0 8px; margin-top: 10px; }
+    td { background: white; padding: 10px; border-radius: 10px; border: 1px solid #f0f0f0; }
+    input, select { padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; background: white; font-family: inherit; }
     .st-seat { width: 60px; text-align: center; font-weight: bold; }
     .st-name { border: none; font-weight: bold; color: var(--wood-green); width: 100px; background: transparent; }
 
@@ -51,7 +58,7 @@
 </head>
 <body>
 
-  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.9.0 - 全域統一設定版</div>
+  <div style="background:var(--wood-green); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.0.0 - 雙軌設定與智慧事由版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
@@ -63,7 +70,10 @@
       </div>
 
       <div class="global-settings" id="globalSettings" style="display:none;">
-        <h3 style="margin-top:0; color:var(--sage-green); border-bottom: 2px solid #eee; padding-bottom: 10px;">📝 全域作業抽查設定 (套用至以下所有班級)</h3>
+        <label class="sync-toggle">
+          <input type="checkbox" id="syncGlobal" checked onchange="toggleSync()" style="width:18px; height:18px;"> 🔗 同步套用至所有班級
+        </label>
+        <h3 style="margin-top:0; color:var(--sage-green); border-bottom: 2px solid #eee; padding-bottom: 10px; width: 70%;">📝 預設表單設定</h3>
         
         <div class="form-grid">
           <div class="form-group"><label>填表日期</label><input type="date" id="globalDate"></div>
@@ -79,9 +89,15 @@
             </select>
           </div>
         </div>
-        <div class="form-group">
-          <label>具體事由 (如：國文習作、英文單字表)</label>
-          <input type="text" id="globalReason" value="作業未繳交" style="width:100%; box-sizing:border-box;">
+        <div class="form-grid" style="grid-template-columns: 1fr 1.5fr;">
+          <div class="form-group">
+            <label>作業標題 (如：國文習作)</label>
+            <input type="text" id="globalTitle" placeholder="在此輸入科目或標題" value="一般作業">
+          </div>
+          <div class="form-group">
+            <label>事由後綴 (自動組合)</label>
+            <input type="text" id="globalSuffix" value="未依規定期限完成並繳交" style="color:#666; background:#f9f9f9;">
+          </div>
         </div>
       </div>
 
@@ -135,11 +151,29 @@
           document.getElementById('globalSettings').style.display = 'block';
           document.getElementById('finalSubmit').style.display = 'block';
 
-          // 初始化全域時間與學年度
           document.getElementById('globalDate').value = new Date().toISOString().split('T')[0];
           document.getElementById('globalYear').value = new Date().getFullYear() - 1911;
         });
     };
+
+    // 🌟 切換全域/個別設定的邏輯
+    function toggleSync() {
+      const isSync = document.getElementById('syncGlobal').checked;
+      const allCardSettings = document.querySelectorAll('.card-settings');
+      
+      allCardSettings.forEach(settingDiv => {
+        settingDiv.style.display = isSync ? 'none' : 'block';
+        
+        // 如果是「取消同步」(也就是要個別設定時)，自動把全域的值複製進來當預設值，省去老師重打
+        if (!isSync) {
+          settingDiv.querySelector('.inp-date').value = document.getElementById('globalDate').value;
+          settingDiv.querySelector('.inp-year').value = document.getElementById('globalYear').value;
+          settingDiv.querySelector('.sel-type').value = document.getElementById('globalType').value;
+          settingDiv.querySelector('.inp-title').value = document.getElementById('globalTitle').value;
+          settingDiv.querySelector('.inp-suffix').value = document.getElementById('globalSuffix').value;
+        }
+      });
+    }
 
     function addClassCard(targetClass = null) {
       cardCount++;
@@ -154,13 +188,38 @@
         return `<option value="${c}" ${isSelected}>${c} 班</option>`;
       }).join('');
       
-      // 🌟 卡片極簡化，只留下班級與學生表格
+      // 根據目前的同步狀態決定是否顯示個別設定區塊
+      const isSync = document.getElementById('syncGlobal').checked;
+      const displayStyle = isSync ? 'none' : 'block';
+
       card.innerHTML = `
         <span style="position:absolute; top:20px; right:25px; cursor:pointer; font-size:1.5rem; color:#ccc;" onclick="this.closest('.class-card').remove()">✕</span>
-        <div style="display:flex; align-items:center; gap:15px; border-bottom:2px solid #eee; padding-bottom:15px; margin-bottom:15px;">
+        <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
           <h3 style="margin:0; color:var(--sage-green);">📂 班級：</h3>
           <select class="sel-class" style="width:200px; font-weight:bold; font-size:1.1rem; color:var(--wood-green); border-color:var(--sage-green);">${classOptions}</select>
         </div>
+        
+        <div class="card-settings" style="display: ${displayStyle};">
+          <div class="form-grid" style="margin-bottom:10px;">
+            <div class="form-group"><label>填表日期</label><input type="date" class="inp-date"></div>
+            <div class="form-group"><label>學年度</label><input type="number" class="inp-year"></div>
+            <div class="form-group">
+              <label>抽查類別</label>
+              <select class="sel-type">
+                <option value="第一次作業抽查">第一次作業抽查</option>
+                <option value="第二次作業抽查">第二次作業抽查</option>
+                <option value="寒假作業抽查">寒假作業抽查</option>
+                <option value="暑假作業抽查">暑假作業抽查</option>
+                <option value="其他">其他類別</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid" style="grid-template-columns: 1fr 1.5fr; margin-bottom:0;">
+            <div class="form-group"><label>作業標題</label><input type="text" class="inp-title"></div>
+            <div class="form-group"><label>事由後綴</label><input type="text" class="inp-suffix"></div>
+          </div>
+        </div>
+
         <table>
           <thead><tr><th>座號</th><th>姓名</th><th>警告累計</th><th>操作</th></tr></thead>
           <tbody class="student-list"></tbody>
@@ -168,6 +227,11 @@
         <button class="btn-action btn-add" style="margin-top:10px; width:100%; padding:8px;" onclick="addStudentRow('${cardId}')">＋ 單筆新增學生</button>
       `;
       container.appendChild(card);
+      
+      // 如果預設是個別設定，需要馬上初始化它的值
+      if (!isSync) {
+        toggleSync(); // 觸發一次同步複製
+      }
       return cardId;
     }
 
@@ -224,21 +288,34 @@
       closeModal();
     }
 
-    // 🌟 全域資料提取邏輯
+    // 🌟 全域與個別資料動態提取
     function submitAll() {
-      // 1. 抓取全域設定
-      const gDate = document.getElementById('globalDate').value;
-      const gYear = document.getElementById('globalYear').value;
-      const gType = document.getElementById('globalType').value;
-      const gReason = document.getElementById('globalReason').value;
-      
-      // 組合正式大標題
-      const fullTitle = `${gYear}學年度 ${gType} (${gReason})`;
-
+      const isSync = document.getElementById('syncGlobal').checked;
       const cards = document.querySelectorAll('.class-card');
       const allData = [];
       
       cards.forEach(card => {
+        // 決定要用哪一組設定 (全域 or 個別)
+        let cYear, cDate, cType, cTitle, cSuffix;
+
+        if (isSync) {
+          cYear = document.getElementById('globalYear').value;
+          cDate = document.getElementById('globalDate').value;
+          cType = document.getElementById('globalType').value;
+          cTitle = document.getElementById('globalTitle').value;
+          cSuffix = document.getElementById('globalSuffix').value;
+        } else {
+          cYear = card.querySelector('.inp-year').value;
+          cDate = card.querySelector('.inp-date').value;
+          cType = card.querySelector('.sel-type').value;
+          cTitle = card.querySelector('.inp-title').value;
+          cSuffix = card.querySelector('.inp-suffix').value;
+        }
+
+        // 🌟 組合標題與事由 (例：113學年度 第一次作業抽查 (國文習作未依規定期限完成並繳交))
+        const fullReason = `${cTitle}${cSuffix}`;
+        const finalBackendString = `${cYear}學年度 ${cType} (${fullReason})`;
+
         const students = [];
         card.querySelectorAll('.student-list tr').forEach(row => {
           const seat = row.querySelector('.st-seat').value;
@@ -252,8 +329,8 @@
         if (students.length > 0) {
           allData.push({
             gradeClass: card.querySelector('.sel-class').value,
-            date: gDate,           // 統一帶入全域日期
-            reason: fullTitle,     // 統一帶入全域標題
+            date: cDate,               
+            reason: finalBackendString, 
             students: students
           });
         }
