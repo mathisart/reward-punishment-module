@@ -3,76 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 - 累加獎懲模組 v1.2.0</title>
+  <title>作業抽查管理系統 - 批次上傳模組 v1.3.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* 保持您原始的森林系配色 */
+    /* 延續森林系配色 */
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
     body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--cream); color: var(--wood-green); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
     .main-wrapper { display: flex; gap: 30px; width: 100%; max-width: 1400px; align-items: flex-start; }
     
-    /* 歷史面板 */
-    .history-panel { width: 450px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
-    .history-item { padding: 15px; margin-bottom: 15px; background: #fffdf5; border-radius: 12px; border: 1px solid #eee; }
-    
-    /* 主要容器 */
     .container { flex: 1; background: var(--soft-white); padding: 45px; border-radius: 35px; box-shadow: 0 20px 60px rgba(96,108,56,0.12); border-top: 20px solid var(--sage-green); }
     h1 { color: var(--sage-green); text-align: center; margin-bottom: 45px; font-size: 2.8rem; letter-spacing: 2px; }
     .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 35px; margin-bottom: 40px; position: relative; }
     
-    /* 表格樣式優化 */
-    table { width: 100%; border-spacing: 0 10px; }
-    th { text-align: left; padding: 10px; color: #999; }
-    td { background: white; padding: 15px; border-radius: 12px; border: 1px solid #f0f0f0; }
+    /* 歷史面板 */
+    .history-panel { width: 400px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
+    .history-item { padding: 12px; margin-bottom: 10px; background: #fffdf5; border-radius: 10px; border: 1px solid #eee; font-size: 0.95rem; }
+
+    /* 表格與輸入 */
+    table { width: 100%; border-spacing: 0 10px; margin-top: 15px; }
+    td { background: white; padding: 12px; border-radius: 12px; border: 1px solid #f0f0f0; }
+    input, select { padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; }
+    .st-seat { width: 60px; text-align: center; }
+    .st-name { border: none; font-weight: bold; color: var(--wood-green); width: 100px; background: transparent; }
+
+    /* 按鈕組 */
+    .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+    .btn-action { padding: 12px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn-add { background: #f0f0f0; color: #666; }
+    .btn-batch { background: var(--earth); color: white; }
+    .btn-submit { background: var(--sage-green); color: white; width: 100%; font-size: 1.4rem; padding: 20px; margin-top: 30px; }
+    .btn-action:hover { opacity: 0.9; transform: translateY(-2px); }
+
+    /* 批次輸入彈窗 (Modal) */
+    #batchModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 30px; border-radius: 25px; width: 500px; max-width: 90%; }
+    textarea { width: 100%; height: 200px; margin: 15px 0; padding: 15px; border: 2px solid #ddd; border-radius: 15px; font-size: 1rem; box-sizing: border-box; }
     
-    /* 輸入框樣式 */
-    input, select { padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 1.1rem; }
-    .st-seat { width: 70px; text-align: center; font-weight: bold; }
-    .st-name { border: none; font-weight: 800; color: var(--wood-green); width: 120px; }
-    .st-warn-input { width: 80px; color: var(--brown); font-weight: bold; } /* 新增支數輸入 */
-    
-    /* 按鈕 */
-    .btn-submit { background: var(--sage-green); color: white; border: none; width: 100%; font-size: 1.4rem; padding: 20px; border-radius: 18px; cursor: pointer; font-weight: bold; margin-top: 20px; }
-    .btn-add-class { background: var(--earth); color: white; border: none; padding: 15px 30px; font-size: 1.1rem; border-radius: 18px; cursor: pointer; margin-bottom: 10px; font-weight: bold; }
-    
-    #loading { display: flex; flex-direction: column; align-items: center; margin-top: 35px; }
-    .spinner { width: 40px; height: 40px; border: 5px solid #d3dbb8; border-top: 5px solid var(--sage-green); border-radius: 50%; animation: spin 1s linear infinite; }
+    #loading { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
+    .spinner { width: 30px; height: 30px; border: 4px solid #eee; border-top: 4px solid var(--sage-green); border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-  <div class="version-badge" style="background:var(--sage-green); color:white; padding:5px 15px; border-radius:20px; margin-bottom:10px;">Version 1.2.0 (累加支數版)</div>
+  <div style="background:var(--sage-green); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.3.0 - 批次匯入優化版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
     <div class="container">
       <div id="classContainer"></div>
       
-      <button class="btn-add-class" id="btnAddClass" style="display:none;" onclick="addClassCard()">＋ 新增班級資料</button>
-      <button class="btn-submit" id="finalSubmit" style="display:none;" onclick="submitAll()">💾 儲存並產出各班獎懲建議表</button>
+      <button class="btn-action btn-add" id="btnAddClass" style="display:none; width:100%; margin-bottom:10px;" onclick="addClassCard()">＋ 新增班級區塊</button>
+      <button class="btn-action btn-submit" id="finalSubmit" style="display:none;" onclick="submitAll()">💾 儲存並產出所有班級 PDF</button>
       
       <div id="loading">
         <div class="spinner" id="loadingSpinner"></div>
-        <span id="loadingText">正在連線至 GAS 後端...</span>
+        <span id="loadingText">連線中...</span>
       </div>
-      <div id="globalStatus" style="display:none; text-align:center; font-weight:bold; color: var(--sage-green); margin-top:20px;"></div>
     </div>
 
     <div class="history-panel">
-      <h3>📜 系統產出紀錄</h3>
+      <h3>📜 產出紀錄回顧</h3>
       <div id="historyList">讀取中...</div>
+    </div>
+  </div>
+
+  <div id="batchModal">
+    <div class="modal-content">
+      <h3 style="margin-top:0; color:var(--brown);">🚀 批次快速匯入</h3>
+      <p style="font-size:0.9rem; color:#666;">請從 Excel 複製「座號」與「警告支數」貼入下方：<br>(每列一筆，座號與支數間可用空格或 Tab 隔開)</p>
+      <textarea id="batchInput" placeholder="範例：&#10;5 1&#10;12 2&#10;18 1"></textarea>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-action btn-batch" style="flex:2;" onclick="processBatch()">確認匯入</button>
+        <button class="btn-action btn-add" style="flex:1;" onclick="closeModal()">取消</button>
+      </div>
     </div>
   </div>
 
   <audio id="successSound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg"></audio>
 
   <script>
-    // 🚨 請更換為您的 GAS URL
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxv1_4kjhx42CpoQoLmVLEeryDGwgZD73qsbMV2J4MezUsw1dRrXE01JkZWYb0w8M28/exec'; 
     
     let studentDataMap = {};
     let cardCount = 0;
+    let currentTargetCardId = null;
 
     window.onload = function() {
       fetch(`${GAS_URL}?action=initData`)
@@ -96,83 +111,104 @@
       const classOptions = Object.keys(studentDataMap).sort().map(c => `<option value="${c}">${c} 班</option>`).join('');
       
       card.innerHTML = `
-        <span style="position:absolute; top:20px; right:20px; cursor:pointer;" onclick="this.closest('.class-card').remove()">✕</span>
-        <h3>[ 班級單位 #${cardCount} ]</h3>
-        <div style="display:grid; grid-template-columns: 1fr 1fr 2fr; gap:20px; margin-bottom:20px;">
+        <span style="position:absolute; top:20px; right:25px; cursor:pointer; font-size:1.5rem; color:#ccc;" onclick="this.closest('.class-card').remove()">✕</span>
+        <h3 style="margin-top:0; color:var(--sage-green);">[ 班級單位 #${cardCount} ]</h3>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 2fr; gap:15px;">
           <div><label>班級</label><select class="sel-class" style="width:100%">${classOptions}</select></div>
           <div><label>日期</label><input type="date" class="inp-date" value="${new Date().toISOString().split('T')[0]}" style="width:100%"></div>
-          <div><label>預設事由</label><input type="text" class="inp-reason" value="作業未繳交" style="width:100%"></div>
+          <div><label>事由</label><input type="text" class="inp-reason" value="作業未繳交" style="width:100%"></div>
         </div>
         <table>
-          <thead>
-            <tr><th>座號</th><th>姓名</th><th>本次警告</th><th>目前狀態</th></tr>
-          </thead>
+          <thead><tr><th>座號</th><th>姓名</th><th>警告支數</th><th>操作</th></tr></thead>
           <tbody class="student-list"></tbody>
         </table>
-        <button class="btn-add-class" style="background:#eee; color:#666; margin-top:10px;" onclick="addStudentRow('${card.id}')">＋ 增加學生</button>
+        <div class="btn-group">
+          <button class="btn-action btn-add" onclick="addStudentRow('${card.id}')">＋ 單筆新增</button>
+          <button class="btn-action btn-batch" onclick="openBatchModal('${card.id}')">🚀 批次貼上匯入</button>
+        </div>
       `;
       container.appendChild(card);
-      addStudentRow(card.id);
     }
 
-    function addStudentRow(cardId) {
+    function addStudentRow(cardId, seat = '', count = 1) {
       const tbody = document.querySelector(`#${cardId} .student-list`);
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><input type="number" class="st-seat" placeholder="00"></td>
-        <td><input type="text" class="st-name" readonly value="等待輸入..."></td>
-        <td><input type="number" class="st-warn-input" value="1" min="1"> 支</td>
-        <td class="st-status" style="font-size:0.9rem; color:#888;">-</td>
+        <td><input type="number" class="st-seat" value="${seat}" placeholder="00"></td>
+        <td><input type="text" class="st-name" readonly value="等待..."></td>
+        <td><input type="number" class="st-warn-input" value="${count}" min="1" style="width:60px;"> 支</td>
+        <td><button tabindex="-1" onclick="this.closest('tr').remove()" style="border:none; background:none; color:red; cursor:pointer;">✕</button></td>
       `;
       tbody.appendChild(tr);
 
       const seatInp = tr.querySelector('.st-seat');
       const warnInp = tr.querySelector('.st-warn-input');
       
-      seatInp.addEventListener('input', () => updateStudentInfo(cardId, tr));
-      warnInp.addEventListener('input', () => updateStudentInfo(cardId, tr));
+      const update = () => {
+        const classId = document.querySelector(`#${cardId} .sel-class`).value;
+        const nameInp = tr.querySelector('.st-name');
+        if (studentDataMap[classId] && studentDataMap[classId][seatInp.value]) {
+          nameInp.value = studentDataMap[classId][seatInp.value];
+          tr.style.opacity = "1";
+        } else {
+          nameInp.value = "查無此人";
+          tr.style.opacity = "0.5";
+        }
+      };
+
+      seatInp.addEventListener('input', update);
+      if(seat) update(); // 如果是批次匯入的，立即更新姓名
+      seatInp.focus();
     }
 
-    // 關鍵邏輯：在前端計算好累加後的字串，傳給 Code.gs
-    function updateStudentInfo(cardId, tr) {
-      const classId = document.querySelector(`#${cardId} .sel-class`).value;
-      const seat = tr.querySelector('.st-seat').value;
-      const nameInp = tr.querySelector('.st-name');
-      const statusTd = tr.querySelector('.st-status');
-      const count = tr.querySelector('.st-warn-input').value;
-
-      if (studentDataMap[classId] && studentDataMap[classId][seat]) {
-        const name = studentDataMap[classId][seat];
-        nameInp.value = name;
-        statusTd.innerText = `將產出：警告 ${count} 支`;
-        tr.style.backgroundColor = '';
-      } else {
-        nameInp.value = '查無此人';
-        tr.style.backgroundColor = '#fff0f0';
-      }
+    // --- 批次匯入邏輯 ---
+    function openBatchModal(cardId) {
+      currentTargetCardId = cardId;
+      document.getElementById('batchModal').style.display = 'flex';
+      document.getElementById('batchInput').value = '';
+      document.getElementById('batchInput').focus();
     }
 
+    function closeModal() {
+      document.getElementById('batchModal').style.display = 'none';
+    }
+
+    function processBatch() {
+      const rawText = document.getElementById('batchInput').value.trim();
+      if (!rawText) return;
+
+      const lines = rawText.split('\n');
+      let importCount = 0;
+
+      lines.forEach(line => {
+        // 使用正則表達式切分空白、Tab 或逗號
+        const parts = line.split(/[\s,\t]+/).filter(p => p.trim() !== "");
+        if (parts.length >= 1) {
+          const seat = parts[0];
+          const count = parts[1] || 1; // 如果沒寫支數，預設 1 支
+          addStudentRow(currentTargetCardId, seat, count);
+          importCount++;
+        }
+      });
+
+      alert(`成功解析並匯入 ${importCount} 筆資料！`);
+      closeModal();
+    }
+
+    // --- 提交與紀錄功能 ---
     function submitAll() {
       const cards = document.querySelectorAll('.class-card');
       const allData = [];
-
       cards.forEach(card => {
         const students = [];
         card.querySelectorAll('.student-list tr').forEach(row => {
           const seat = row.querySelector('.st-seat').value;
           const name = row.querySelector('.st-name').value;
           const count = row.querySelector('.st-warn-input').value;
-          
-          if (seat && name !== '查無此人' && name !== '等待輸入...') {
-            // 這裡我們將 penalty 字串改為含支數的文字，Code.gs 的 PDF 就會直接印出這個文字
-            students.push({ 
-              seatNo: seat, 
-              name: name, 
-              penalty: `警告共 ${count} 支` 
-            });
+          if (seat && name !== '查無此人') {
+            students.push({ seatNo: seat, name: name, penalty: `警告共 ${count} 支` });
           }
         });
-
         if (students.length > 0) {
           allData.push({
             gradeClass: card.querySelector('.sel-class').value,
@@ -183,9 +219,8 @@
         }
       });
 
-      if (allData.length === 0) { alert('請填寫學生座號！'); return; }
+      if (allData.length === 0) { alert('清單是空的喔！'); return; }
 
-      // 接下來執行您原始碼中的 fetch(GAS_URL, {...}) 邏輯
       document.getElementById('loading').style.display = 'flex';
       fetch(GAS_URL, {
         method: 'POST',
@@ -196,20 +231,20 @@
       .then(res => {
         if (res.status === 'success') {
           document.getElementById('successSound').play();
-          location.reload(); // 成功後重新整理以更新紀錄
+          alert('✅ 資料已送出，請至右側或 Google 試算表查看 PDF！');
+          location.reload();
         }
       });
     }
 
-    // 保持原本的 renderHistory 函數...
     function renderHistory(list) {
       const div = document.getElementById('historyList');
-      if (!list || list.length === 0) { div.innerHTML = '尚無紀錄'; return; }
+      if (!list || list.length === 0) { div.innerHTML = '<p>尚未有歷史紀錄</p>'; return; }
       div.innerHTML = list.map(h => `
         <div class="history-item">
-          <strong>📂 ${h.gradeClass} 班</strong> (${h.count}人)<br>
-          <small>${h.time}</small><br>
-          <a href="${h.url}" target="_blank" style="color:var(--sage-green); font-weight:bold;">開啟試算表</a>
+          <strong>${h.gradeClass} 班</strong> (${h.count}人)<br>
+          <small style="color:#999;">${h.time}</small><br>
+          <a href="${h.url}" target="_blank" style="color:var(--sage-green); font-size:0.8rem;">查看檔案 ↗</a>
         </div>
       `).join('');
     }
