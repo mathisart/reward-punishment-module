@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 - 批次上傳模組 v1.3.0</title>
+  <title>作業抽查管理系統 - 批次上傳模組 v1.4.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     /* 延續森林系配色 */
@@ -23,7 +23,7 @@
     table { width: 100%; border-spacing: 0 10px; margin-top: 15px; }
     td { background: white; padding: 12px; border-radius: 12px; border: 1px solid #f0f0f0; }
     input, select { padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; }
-    .st-seat { width: 60px; text-align: center; }
+    .st-seat { width: 60px; text-align: center; font-weight: bold; }
     .st-name { border: none; font-weight: bold; color: var(--wood-green); width: 100px; background: transparent; }
 
     /* 按鈕組 */
@@ -37,7 +37,7 @@
     /* 批次輸入彈窗 (Modal) */
     #batchModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
     .modal-content { background: white; padding: 30px; border-radius: 25px; width: 500px; max-width: 90%; }
-    textarea { width: 100%; height: 200px; margin: 15px 0; padding: 15px; border: 2px solid #ddd; border-radius: 15px; font-size: 1rem; box-sizing: border-box; }
+    textarea { width: 100%; height: 200px; margin: 15px 0; padding: 15px; border: 2px solid #ddd; border-radius: 15px; font-size: 1.1rem; box-sizing: border-box; font-family: monospace;}
     
     #loading { display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
     .spinner { width: 30px; height: 30px; border: 4px solid #eee; border-top: 4px solid var(--sage-green); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -46,7 +46,7 @@
 </head>
 <body>
 
-  <div style="background:var(--sage-green); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.3.0 - 批次匯入優化版</div>
+  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.4.0 - 試算表智慧解析版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
@@ -70,11 +70,11 @@
 
   <div id="batchModal">
     <div class="modal-content">
-      <h3 style="margin-top:0; color:var(--brown);">🚀 批次快速匯入</h3>
-      <p style="font-size:0.9rem; color:#666;">請從 Excel 複製「座號」與「警告支數」貼入下方：<br>(每列一筆，座號與支數間可用空格或 Tab 隔開)</p>
-      <textarea id="batchInput" placeholder="範例：&#10;5 1&#10;12 2&#10;18 1"></textarea>
+      <h3 style="margin-top:0; color:var(--brown);">🚀 試算表快速匯入</h3>
+      <p style="font-size:0.9rem; color:#666;">請直接複製 Excel 的「學號/班級座號 (如 71025)」與「姓名」貼上：<br>(系統會自動抓取末兩碼作為座號，並略過姓名文字)</p>
+      <textarea id="batchInput" placeholder="範例：&#10;71025 黃乙珊&#10;71028 吳宥婕&#10;71105 劉子洋 2 (最後的數字代表支數，若無則預設1支)"></textarea>
       <div style="display:flex; gap:10px;">
-        <button class="btn-action btn-batch" style="flex:2;" onclick="processBatch()">確認匯入</button>
+        <button class="btn-action btn-batch" style="flex:2;" onclick="processBatch()">智慧解析並匯入</button>
         <button class="btn-action btn-add" style="flex:1;" onclick="closeModal()">取消</button>
       </div>
     </div>
@@ -124,7 +124,7 @@
         </table>
         <div class="btn-group">
           <button class="btn-action btn-add" onclick="addStudentRow('${card.id}')">＋ 單筆新增</button>
-          <button class="btn-action btn-batch" onclick="openBatchModal('${card.id}')">🚀 批次貼上匯入</button>
+          <button class="btn-action btn-batch" onclick="openBatchModal('${card.id}')">📋 直接貼上試算表</button>
         </div>
       `;
       container.appendChild(card);
@@ -137,12 +137,11 @@
         <td><input type="number" class="st-seat" value="${seat}" placeholder="00"></td>
         <td><input type="text" class="st-name" readonly value="等待..."></td>
         <td><input type="number" class="st-warn-input" value="${count}" min="1" style="width:60px;"> 支</td>
-        <td><button tabindex="-1" onclick="this.closest('tr').remove()" style="border:none; background:none; color:red; cursor:pointer;">✕</button></td>
+        <td><button tabindex="-1" onclick="this.closest('tr').remove()" style="border:none; background:none; color:red; cursor:pointer; font-size:1.2rem;">✕</button></td>
       `;
       tbody.appendChild(tr);
 
       const seatInp = tr.querySelector('.st-seat');
-      const warnInp = tr.querySelector('.st-warn-input');
       
       const update = () => {
         const classId = document.querySelector(`#${cardId} .sel-class`).value;
@@ -157,11 +156,11 @@
       };
 
       seatInp.addEventListener('input', update);
-      if(seat) update(); // 如果是批次匯入的，立即更新姓名
+      if(seat) update(); 
       seatInp.focus();
     }
 
-    // --- 批次匯入邏輯 ---
+    // --- 批次匯入邏輯 (v1.4.0 智慧升級版) ---
     function openBatchModal(cardId) {
       currentTargetCardId = cardId;
       document.getElementById('batchModal').style.display = 'flex';
@@ -181,17 +180,37 @@
       let importCount = 0;
 
       lines.forEach(line => {
-        // 使用正則表達式切分空白、Tab 或逗號
-        const parts = line.split(/[\s,\t]+/).filter(p => p.trim() !== "");
-        if (parts.length >= 1) {
-          const seat = parts[0];
-          const count = parts[1] || 1; // 如果沒寫支數，預設 1 支
-          addStudentRow(currentTargetCardId, seat, count);
-          importCount++;
+        // 使用正則表達式切分空白、Tab
+        const parts = line.split(/[\s\t]+/).filter(p => p.trim() !== "");
+        if (parts.length === 0) return;
+
+        let rawSeat = parts[0]; 
+        let finalSeat = "";
+
+        // 智慧解析：如果第一欄是 5 位數 (例如 71025)，只取最後 2 碼 (25)
+        if (rawSeat.length === 5 && !isNaN(rawSeat)) {
+          finalSeat = parseInt(rawSeat.substring(3), 10).toString();
+        } else {
+          finalSeat = parseInt(rawSeat, 10).toString();
         }
+
+        // 如果連座號都解析不出來，就跳過這行
+        if (isNaN(parseInt(finalSeat))) return;
+
+        // 智慧尋找警告支數：略過中文姓名，找看看有沒有數字
+        let finalCount = 1; // 預設 1 支
+        for (let i = 1; i < parts.length; i++) {
+          if (!isNaN(parts[i]) && parts[i] !== "") {
+            finalCount = parseInt(parts[i], 10);
+            break; 
+          }
+        }
+
+        addStudentRow(currentTargetCardId, finalSeat, finalCount);
+        importCount++;
       });
 
-      alert(`成功解析並匯入 ${importCount} 筆資料！`);
+      alert(`成功解析並匯入 ${importCount} 筆學生資料！`);
       closeModal();
     }
 
@@ -222,6 +241,8 @@
       if (allData.length === 0) { alert('清單是空的喔！'); return; }
 
       document.getElementById('loading').style.display = 'flex';
+      document.getElementById('finalSubmit').innerText = '⏳ 處理中...';
+      
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -244,7 +265,7 @@
         <div class="history-item">
           <strong>${h.gradeClass} 班</strong> (${h.count}人)<br>
           <small style="color:#999;">${h.time}</small><br>
-          <a href="${h.url}" target="_blank" style="color:var(--sage-green); font-size:0.8rem;">查看檔案 ↗</a>
+          <a href="${h.url}" target="_blank" style="color:var(--sage-green); font-weight:bold; font-size:0.9rem;">查看檔案 ↗</a>
         </div>
       `).join('');
     }
