@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 v1.8.0</title>
+  <title>作業抽查管理系統 v1.9.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
@@ -13,21 +13,24 @@
     .container { flex: 1; background: var(--soft-white); padding: 45px; border-radius: 35px; box-shadow: 0 20px 60px rgba(96,108,56,0.12); border-top: 20px solid var(--sage-green); }
     h1 { color: var(--sage-green); text-align: center; margin-bottom: 25px; font-size: 2.8rem; letter-spacing: 2px; }
     
-    .top-controls { display: flex; gap: 15px; margin-bottom: 30px; background: #f4f8ec; padding: 20px; border-radius: 20px; border: 2px dashed var(--sage-green); }
-    .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 30px; margin-bottom: 40px; position: relative; }
+    .top-controls { display: flex; gap: 15px; margin-bottom: 20px; background: #f4f8ec; padding: 20px; border-radius: 20px; border: 2px dashed var(--sage-green); }
+    
+    /* 🌟 新增：全域設定區樣式 */
+    .global-settings { background: #fff; border: 2px solid var(--earth); border-radius: 20px; padding: 25px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(221,161,94,0.1); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 15px; margin-bottom: 15px; }
+    .form-group { display: flex; flex-direction: column; }
+    label { font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; color: var(--brown); }
+
+    .class-card { background: #fafaf7; border: 2px solid #eee; border-radius: 25px; padding: 25px; margin-bottom: 30px; position: relative; }
     
     .history-panel { width: 420px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); }
     .history-panel h3 { margin-top: 0; font-size: 1.5rem; color: var(--brown); border-bottom: 3px solid var(--earth); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;}
     .history-item { padding: 12px; margin-bottom: 10px; background: #fffdf5; border-radius: 10px; border-left: 6px solid var(--sage-green); border: 1px solid #eee; font-size: 1rem; }
     .btn-batch-download { background: var(--sage-green); color: white; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; width: 100%; border-radius: 12px; margin-top: 15px; cursor: pointer; box-shadow: 0 5px 10px rgba(96,108,56,0.2); }
 
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 15px; margin-bottom: 15px; }
-    .form-group { display: flex; flex-direction: column; }
-    label { font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; color: var(--brown); }
-
-    table { width: 100%; border-spacing: 0 10px; margin-top: 15px; }
+    table { width: 100%; border-spacing: 0 10px; margin-top: 10px; }
     td { background: white; padding: 12px; border-radius: 12px; border: 1px solid #f0f0f0; }
-    input, select { padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; background: white; }
+    input, select { padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; background: white; font-family: inherit; }
     .st-seat { width: 60px; text-align: center; font-weight: bold; }
     .st-name { border: none; font-weight: bold; color: var(--wood-green); width: 100px; background: transparent; }
 
@@ -48,15 +51,38 @@
 </head>
 <body>
 
-  <div style="background:var(--wood-green); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.8.0 - 標題格式化與學年度設定</div>
+  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 1.9.0 - 全域統一設定版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
     <div class="container">
       
       <div class="top-controls" id="topControls" style="display:none;">
-        <button class="btn-action btn-batch" onclick="openGlobalBatchModal()">📋 貼上名單 (自動分班累加)</button>
+        <button class="btn-action btn-batch" onclick="openGlobalBatchModal()">📋 貼上未交名單 (自動分班累加)</button>
         <button class="btn-action btn-add" onclick="addClassCard()">＋ 手動新增單一班級</button>
+      </div>
+
+      <div class="global-settings" id="globalSettings" style="display:none;">
+        <h3 style="margin-top:0; color:var(--sage-green); border-bottom: 2px solid #eee; padding-bottom: 10px;">📝 全域作業抽查設定 (套用至以下所有班級)</h3>
+        
+        <div class="form-grid">
+          <div class="form-group"><label>填表日期</label><input type="date" id="globalDate"></div>
+          <div class="form-group"><label>學年度</label><input type="number" id="globalYear"></div>
+          <div class="form-group">
+            <label>抽查類別</label>
+            <select id="globalType">
+              <option value="第一次作業抽查">第一次作業抽查</option>
+              <option value="第二次作業抽查">第二次作業抽查</option>
+              <option value="寒假作業抽查">寒假作業抽查</option>
+              <option value="暑假作業抽查">暑假作業抽查</option>
+              <option value="其他">其他類別</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>具體事由 (如：國文習作、英文單字表)</label>
+          <input type="text" id="globalReason" value="作業未繳交" style="width:100%; box-sizing:border-box;">
+        </div>
       </div>
 
       <div id="classContainer"></div>
@@ -75,16 +101,16 @@
         <button onclick="selectAllHistory()" style="font-size:0.8rem; padding:5px 10px; border-radius:5px; cursor:pointer;">全選</button>
       </h3>
       <div id="historyList">讀取中...</div>
-      <button class="btn-batch-download" onclick="batchDownloadPdfs()">🖨️ 批次下載 PDF</button>
+      <button class="btn-batch-download" onclick="batchDownloadPdfs()">🖨️ 批次下載打勾的 PDF</button>
     </div>
   </div>
 
   <div id="batchModal">
     <div class="modal-content">
       <h3 style="margin-top:0; color:var(--brown);">🚀 跨班級智慧解析</h3>
-      <textarea id="batchInput" placeholder="71025 黃乙珊&#10;71025 黃乙珊&#10;71105 劉子洋"></textarea>
+      <textarea id="batchInput" placeholder="直接貼上試算表內容：&#10;71025 黃乙珊&#10;71025 黃乙珊&#10;71105 劉子洋 2"></textarea>
       <div style="display:flex; gap:10px;">
-        <button class="btn-action btn-batch" style="flex:2;" onclick="processGlobalBatch()">✨ 開始智慧分班</button>
+        <button class="btn-action btn-batch" style="flex:2;" onclick="processGlobalBatch()">✨ 開始智慧分班與累加</button>
         <button class="btn-action btn-add" style="flex:1;" onclick="closeModal()">取消</button>
       </div>
     </div>
@@ -106,7 +132,12 @@
           renderHistory(res.data.history);
           document.getElementById('loading').style.display = 'none';
           document.getElementById('topControls').style.display = 'flex';
+          document.getElementById('globalSettings').style.display = 'block';
           document.getElementById('finalSubmit').style.display = 'block';
+
+          // 初始化全域時間與學年度
+          document.getElementById('globalDate').value = new Date().toISOString().split('T')[0];
+          document.getElementById('globalYear').value = new Date().getFullYear() - 1911;
         });
     };
 
@@ -123,35 +154,13 @@
         return `<option value="${c}" ${isSelected}>${c} 班</option>`;
       }).join('');
       
-      const currentYear = new Date().getFullYear() - 1911; // 簡易轉換民國學年度
-
+      // 🌟 卡片極簡化，只留下班級與學生表格
       card.innerHTML = `
-        <span style="position:absolute; top:20px; right:25px; cursor:pointer; color:#ccc;" onclick="this.closest('.class-card').remove()">✕</span>
-        <h3 style="margin-top:0; color:var(--sage-green); border-bottom: 2px solid #eee; padding-bottom: 10px;">獎懲建議表設定</h3>
-        
-        <div class="form-grid">
-          <div class="form-group"><label>班級</label><select class="sel-class">${classOptions}</select></div>
-          <div class="form-group"><label>填表日期</label><input type="date" class="inp-date" value="${new Date().toISOString().split('T')[0]}"></div>
-          <div class="form-group"><label>學年度</label><input type="number" class="inp-year" value="${currentYear}"></div>
+        <span style="position:absolute; top:20px; right:25px; cursor:pointer; font-size:1.5rem; color:#ccc;" onclick="this.closest('.class-card').remove()">✕</span>
+        <div style="display:flex; align-items:center; gap:15px; border-bottom:2px solid #eee; padding-bottom:15px; margin-bottom:15px;">
+          <h3 style="margin:0; color:var(--sage-green);">📂 班級：</h3>
+          <select class="sel-class" style="width:200px; font-weight:bold; font-size:1.1rem; color:var(--wood-green); border-color:var(--sage-green);">${classOptions}</select>
         </div>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label>抽查類別</label>
-            <select class="sel-type">
-              <option value="第一次作業抽查">第一次作業抽查</option>
-              <option value="第二次作業抽查">第二次作業抽查</option>
-              <option value="寒假作業抽查">寒假作業抽查</option>
-              <option value="暑假作業抽查">暑假作業抽查</option>
-              <option value="其他">其他類別 (於右側註記)</option>
-            </select>
-          </div>
-          <div class="form-group" style="grid-column: span 2;">
-            <label>具體事由 (如：科目/細節)</label>
-            <input type="text" class="inp-reason" value="作業未繳交">
-          </div>
-        </div>
-
         <table>
           <thead><tr><th>座號</th><th>姓名</th><th>警告累計</th><th>操作</th></tr></thead>
           <tbody class="student-list"></tbody>
@@ -168,8 +177,8 @@
       tr.innerHTML = `
         <td><input type="number" class="st-seat" value="${seat}"></td>
         <td><input type="text" class="st-name" readonly value="等待..."></td>
-        <td><input type="number" class="st-warn-input" value="${count}" min="1" style="width:50px;"> 支</td>
-        <td><button onclick="this.closest('tr').remove()" style="border:none; background:none; color:red; cursor:pointer;">✕</button></td>
+        <td><input type="number" class="st-warn-input" value="${count}" min="1" style="width:60px;"> 支</td>
+        <td><button tabindex="-1" onclick="this.closest('tr').remove()" style="border:none; background:none; color:red; cursor:pointer; font-size:1.2rem;">✕</button></td>
       `;
       tbody.appendChild(tr);
       const seatInp = tr.querySelector('.st-seat');
@@ -185,6 +194,7 @@
         }
       };
       seatInp.addEventListener('input', update);
+      document.querySelector(`#${cardId} .sel-class`).addEventListener('change', update);
       if(seat) update(); 
     }
 
@@ -195,7 +205,7 @@
       let groupedData = {}; 
       lines.forEach(line => {
         const parts = line.split(/[\s\t]+/).filter(p => p.trim() !== "");
-        if (parts.length >= 1 && parts[0].length === 5) {
+        if (parts.length >= 1 && parts[0].length === 5 && !isNaN(parts[0])) {
           const cls = parts[0].substring(0, 3);
           const seat = parseInt(parts[0].substring(3), 10).toString();
           let count = 1;
@@ -214,17 +224,21 @@
       closeModal();
     }
 
+    // 🌟 全域資料提取邏輯
     function submitAll() {
+      // 1. 抓取全域設定
+      const gDate = document.getElementById('globalDate').value;
+      const gYear = document.getElementById('globalYear').value;
+      const gType = document.getElementById('globalType').value;
+      const gReason = document.getElementById('globalReason').value;
+      
+      // 組合正式大標題
+      const fullTitle = `${gYear}學年度 ${gType} (${gReason})`;
+
       const cards = document.querySelectorAll('.class-card');
       const allData = [];
+      
       cards.forEach(card => {
-        const year = card.querySelector('.inp-year').value;
-        const type = card.querySelector('.sel-type').value;
-        const detail = card.querySelector('.inp-reason').value;
-        
-        // 🌟 組合正式標題字串
-        const fullTitle = `${year}學年度 ${type} (${detail})`;
-        
         const students = [];
         card.querySelectorAll('.student-list tr').forEach(row => {
           const seat = row.querySelector('.st-seat').value;
@@ -238,15 +252,18 @@
         if (students.length > 0) {
           allData.push({
             gradeClass: card.querySelector('.sel-class').value,
-            date: card.querySelector('.inp-date').value,
-            reason: fullTitle, // 傳送組合後的正式標題
+            date: gDate,           // 統一帶入全域日期
+            reason: fullTitle,     // 統一帶入全域標題
             students: students
           });
         }
       });
 
-      if (allData.length === 0) return alert('清單是空的喔！');
+      if (allData.length === 0) return alert('清單是空的喔！請先匯入資料。');
+      
       document.getElementById('loading').style.display = 'flex';
+      document.getElementById('finalSubmit').innerText = '⏳ PDF 產出中，請稍候...';
+      
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -291,7 +308,7 @@
     }
 
     function closeModal() { document.getElementById('batchModal').style.display = 'none'; }
-    function openGlobalBatchModal() { document.getElementById('batchModal').style.display = 'flex'; }
+    function openGlobalBatchModal() { document.getElementById('batchModal').style.display = 'flex'; document.getElementById('batchInput').value=''; document.getElementById('batchInput').focus(); }
   </script>
 </body>
 </html>
