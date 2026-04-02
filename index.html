@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>作業抽查管理系統 - 歷史紀錄分頁版 v2.6.0</title>
+  <title>作業抽查管理系統 - 終極正式版 v2.6.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root { --sage-green: #606c38; --wood-green: #283618; --cream: #fefae0; --earth: #dda15e; --brown: #bc6c25; --soft-white: #ffffff; }
@@ -27,7 +27,6 @@
     .class-card:hover { border-color: var(--sage-green); }
     .card-settings { background: #fff; border: 1px dashed #ccc; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
 
-    /* 歷史面板樣式 */
     .history-panel { width: 420px; background: var(--soft-white); padding: 25px; border-radius: 20px; border: 4px solid var(--earth); position: sticky; top: 20px; box-shadow: 8px 8px 0px var(--earth); max-height: 85vh; display: flex; flex-direction: column;}
     .history-panel h3 { margin-top: 0; font-size: 1.5rem; color: var(--brown); border-bottom: 3px solid var(--earth); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
     #historyList { overflow-y: auto; flex: 1; padding-right: 5px; margin-top: 10px; }
@@ -36,7 +35,6 @@
     
     .history-item { padding: 12px; margin-bottom: 10px; background: #fffdf5; border-radius: 10px; border-left: 6px solid var(--sage-green); border: 1px solid #eee; font-size: 1rem; }
     
-    /* 🌟 新增：分頁控制列樣式 */
     .pagination-controls { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; margin-top: 10px; border-top: 1px dashed #ccc; font-size: 0.9rem; font-weight: bold; color: var(--wood-green); flex-shrink: 0;}
     .page-btn { background: var(--earth); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
     .page-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
@@ -68,14 +66,14 @@
 </head>
 <body>
 
-  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.4.0 - 歷史紀錄分頁版</div>
+  <div style="background:var(--brown); color:white; padding:5px 20px; border-radius:20px; margin-bottom:15px; font-size:0.9rem;">Version 2.6.0 - 終極正式版</div>
   <h1>🌿 作業抽查管理系統</h1>
 
   <div class="main-wrapper">
     <div class="container">
       
       <div class="top-controls" id="topControls" style="display:none;">
-        <button class="btn-action btn-batch" onclick="openGlobalBatchModal()">📋 貼上未交名單 (自動分班累加)</button>
+        <button class="btn-action btn-batch" onclick="openGlobalBatchModal()">📋 貼上名單 (智慧分班 / 累加警告)</button>
         <button class="btn-action btn-add" onclick="addClassCard()">＋ 手動新增單一班級</button>
       </div>
 
@@ -83,13 +81,13 @@
         <label class="sync-toggle">
           <input type="checkbox" id="syncGlobal" checked onchange="toggleSync()" style="width:18px; height:18px;"> 🔗 同步套用至所有班級
         </label>
-        <h3 style="margin-top:0; color:var(--sage-green); border-bottom: 2px solid #eee; padding-bottom: 10px; width: 70%;">📝 預設表單設定</h3>
+        <h3 style="margin-top:0; color:var(--sage-green); border-bottom: 2px solid #eee; padding-bottom: 10px; width: 70%;">📝 全域表單設定</h3>
         
         <div class="form-grid">
           <div class="form-group"><label>填表日期</label><input type="date" id="globalDate"></div>
           <div class="form-group"><label>學年度</label><input type="number" id="globalYear"></div>
           <div class="form-group">
-            <label>抽查類別</label>
+            <label>抽查類別 (主標題)</label>
             <select id="globalType">
               <option value="第一次作業抽查">第一次作業抽查</option>
               <option value="第二次作業抽查">第二次作業抽查</option>
@@ -101,11 +99,11 @@
         </div>
         <div class="form-grid" style="grid-template-columns: 1fr 1.5fr;">
           <div class="form-group">
-            <label>作業標題 (如：國文習作)</label>
-            <input type="text" id="globalTitle" placeholder="在此輸入科目或標題" value="一般作業">
+            <label>作業標題 (如：寒假作業)</label>
+            <input type="text" id="globalTitle" placeholder="在此輸入科目或標題" value="寒假作業">
           </div>
           <div class="form-group">
-            <label>事由後綴 (自動組合)</label>
+            <label>事由後綴 (組成表格內文)</label>
             <input type="text" id="globalSuffix" value="未依規定期限完成並繳交" style="color:#666; background:#f9f9f9;">
           </div>
         </div>
@@ -141,7 +139,7 @@
   <div id="batchModal">
     <div class="modal-content">
       <h3 style="margin-top:0; color:var(--brown);">🚀 跨班級智慧解析</h3>
-      <textarea id="batchInput" placeholder="直接貼上試算表內容：&#10;71025 黃乙珊&#10;71025 黃乙珊&#10;71105 劉子洋 2"></textarea>
+      <textarea id="batchInput" placeholder="請貼上「學號/班級座號(5碼)」與「姓名」，若有支數請空一格填寫：&#10;71025 黃乙珊&#10;71025 黃乙珊&#10;71105 劉子洋 2"></textarea>
       <div style="display:flex; gap:10px;">
         <button class="btn-action btn-batch" style="flex:2;" onclick="processGlobalBatch()">✨ 開始智慧分班與累加</button>
         <button class="btn-action btn-add" style="flex:1;" onclick="closeModal()">取消</button>
@@ -152,22 +150,21 @@
   <audio id="successSound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg"></audio>
 
   <script>
+    // 🚨 這是您最新設定好的 GAS URL，請確認沒有改錯喔！
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbwosEQbJZyGEkjdEN-pVhICTDgDRAENUGoRRGJV3_nt_3jjUvlMynrhFnzg-rb5eIHN/exec'; 
     
     let studentDataMap = {};
     let cardCount = 0;
 
-    // 🌟 分頁全域變數
     let fullHistoryData = []; 
     let currentPage = 1;
-    const itemsPerPage = 10; // 每頁顯示 10 筆
+    const itemsPerPage = 10; 
 
     window.onload = function() {
       fetch(`${GAS_URL}?action=initData&t=${new Date().getTime()}`)
         .then(res => res.json())
         .then(res => {
           studentDataMap = res.data.students;
-          // 初始化分頁資料
           fullHistoryData = res.data.history || [];
           renderHistoryPage(); 
 
@@ -328,8 +325,8 @@
           cSuffix = card.querySelector('.inp-suffix').value;
         }
 
-        const fullReason = `${cTitle}${cSuffix}`;
-        const finalBackendString = `${cYear}學年度 ${cType} (${fullReason})`;
+        const pureReason = `${cTitle}${cSuffix}`;
+        const documentHeaderTitle = `${cYear}學年度 ${cType}`;
 
         const students = [];
         card.querySelectorAll('.student-list tr').forEach(row => {
@@ -345,7 +342,8 @@
           allData.push({
             gradeClass: card.querySelector('.sel-class').value,
             date: cDate,               
-            reason: finalBackendString, 
+            reason: pureReason, 
+            docTitle: documentHeaderTitle, 
             students: students
           });
         }
@@ -381,7 +379,6 @@
       setTimeout(() => { location.reload(); }, 2000);
     }
 
-    // 🌟 核心升級：分頁渲染邏輯
     function renderHistoryPage() {
       const div = document.getElementById('historyList');
       const pagination = document.getElementById('paginationControls');
@@ -392,17 +389,14 @@
         return;
       }
 
-      // 計算總頁數與安全邊界
       const totalPages = Math.ceil(fullHistoryData.length / itemsPerPage);
       if (currentPage < 1) currentPage = 1;
       if (currentPage > totalPages) currentPage = totalPages;
 
-      // 切割出當前頁要顯示的資料
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
       const pageData = fullHistoryData.slice(startIndex, endIndex);
 
-      // 渲染畫面
       div.innerHTML = pageData.map(h => {
         const match = h.url.match(/\/d\/([a-zA-Z0-9-_]+)/);
         const pdfUrl = match ? `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=pdf&size=A4&portrait=false&fitw=true&gridlines=false&top_margin=0.2&bottom_margin=0.2&left_margin=0.2&right_margin=0.2` : h.url;
@@ -420,7 +414,6 @@
         `;
       }).join('');
 
-      // 更新分頁按鈕狀態
       pagination.style.display = 'flex';
       document.getElementById('pageIndicator').innerText = `第 ${currentPage} / ${totalPages} 頁 (共 ${fullHistoryData.length} 筆)`;
       document.getElementById('prevPageBtn').disabled = (currentPage === 1);
@@ -430,11 +423,9 @@
     function changePage(delta) {
       currentPage += delta;
       renderHistoryPage();
-      // 切換頁面後，將捲軸滾回頂部
       document.getElementById('historyList').scrollTop = 0;
     }
 
-    // 🌟 全選邏輯改為「只全選當前頁面看得見的項目」
     function selectAllHistory() {
       const cbs = document.querySelectorAll('.history-cb');
       const all = Array.from(cbs).every(c => c.checked);
